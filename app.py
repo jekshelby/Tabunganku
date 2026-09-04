@@ -1,14 +1,16 @@
 import os
 from functools import wraps
+from datetime import timedelta
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
+
 from features.dashboard import get_ringkasan_keuangan, get_semua_riwayat
 from features.pencatatan import get_kategori_transaksi, simpan_transaksi_baru
 from features.ocr import ekstraksi_total_struk
 from features.auth import register_user, check_user_login
-from datetime import timedelta
 
 app = Flask(__name__)
-# Secret key dibutuhkan untuk mengelola session login
+
+# Secret key untuk mengelola session login
 app.secret_key = os.getenv('SECRET_KEY', 'catatuang_secret_key_12345')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
@@ -33,7 +35,7 @@ def login():
         
         user = check_user_login(email, password)
         if user:
-            session.permanent = True  # <--- WAJIB DIPANGGIL agar durasi 30 hari aktif
+            session.permanent = True  # Aktifkan session 30 hari
             session['user_id'] = user['id']
             session['user_nama'] = user['nama']
             return redirect(url_for('index'))
@@ -55,7 +57,7 @@ def register():
         success, result = register_user(nama, email, password)
         if success:
             flash('Pendaftaran berhasil! Silakan masuk dengan akun baru kamu.', 'success')
-            return redirect(url_for('login')) # balik ke login
+            return redirect(url_for('login'))
         else:
             flash('Email sudah terdaftar. Silakan gunakan email lain.', 'danger')
 
@@ -66,7 +68,30 @@ def register():
 @login_required
 def index():
     user_id = session['user_id']
-    data_dashboard = get_ringkasan_keuangan(user_id)
+
+    # 1. Ambil ringkasan angka (saldo, pemasukan, pengeluaran)
+    data_dashboard = get_ringkasan_keuangan(user_id) or {}
+
+    # 2. Ambil seluruh riwayat
+    riwayat_raw = get_semua_riwayat(user_id)
+
+    # 3. Proses riwayat untuk preview 3 item di Dashboard (apabila return-nya dict/list)
+    items_flat = []
+    if isinstance(riwayat_raw, dict):
+        # Jika riwayat berupa dictionary di-group per tanggal
+        for tanggal, group in riwayat_raw.items():
+            for item in group.get('items', []):
+                # Masukkan tanggal ke item agar bisa dipanggil item.tanggal
+                item_with_date = item.copy()
+                item_with_date['tanggal'] = tanggal
+                items_flat.append(item_with_date)
+    elif isinstance(riwayat_raw, list):
+        # Jika riwayat berupa list biasa
+        items_flat = riwayat_raw
+
+    # Simpan maksimal 3 transaksi terbaru untuk index.html
+    data_dashboard['riwayat'] = items_flat[:3]
+
     return render_template('dashboard.html', data=data_dashboard)
 
 @app.route('/tambah', methods=['GET', 'POST'])
@@ -79,8 +104,12 @@ def tambah_transaksi():
         kategori = request.form.get('kategori')
         catatan = request.form.get('catatan')
 
-        simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan)
-        return redirect(url_for('index'))
+        if simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan):
+            flash('Transaksi berhasil disimpan.', 'success')
+            return redirect(url_for('index'))
+
+        flash('Transaksi tidak valid atau gagal disimpan.', 'danger')
+        return redirect(url_for('tambah_transaksi'))
 
     kategori = get_kategori_transaksi()
     return render_template('pencatatan.html', kategori=kategori)
@@ -89,7 +118,8 @@ def tambah_transaksi():
 @login_required
 def transaksi():
     user_id = session['user_id']
-    riwayat_lengkap = get_semua_riwayat(user_id)
+    riwayat_lengkap = get_semua_riwayat(user_id) or {}
+
     return render_template('transaksi.html', riwayat=riwayat_lengkap)
 
 @app.route('/scan')

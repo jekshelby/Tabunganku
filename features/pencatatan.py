@@ -27,6 +27,14 @@ def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan=""):
     cursor = conn.cursor()
     
     try:
+        tipe = (tipe or '').strip().capitalize()
+        if tipe not in {'Pemasukan', 'Pengeluaran'}:
+            return False
+        if not kategori or not str(kategori).strip():
+            return False
+        if not nominal or float(nominal) <= 0:
+            return False
+
         query = """
             INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan)
             VALUES (%s, %s, %s, %s, %s)

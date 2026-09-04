@@ -10,7 +10,7 @@ def get_ringkasan_keuangan(user_id):
         cursor.execute("""
             SELECT COALESCE(SUM(nominal), 0) as total 
             FROM transaksi 
-            WHERE user_id = %s AND tipe = 'Pemasukan'
+            WHERE user_id = %s AND LOWER(tipe) = 'pemasukan'
         """, (user_id,))
         total_pemasukan = float(cursor.fetchone()['total'])
 
@@ -18,7 +18,7 @@ def get_ringkasan_keuangan(user_id):
         cursor.execute("""
             SELECT COALESCE(SUM(nominal), 0) as total 
             FROM transaksi 
-            WHERE user_id = %s AND tipe = 'Pengeluaran'
+            WHERE user_id = %s AND LOWER(tipe) = 'pengeluaran'
         """, (user_id,))
         total_pengeluaran = float(cursor.fetchone()['total'])
 
@@ -27,7 +27,7 @@ def get_ringkasan_keuangan(user_id):
 
         # 5 Transaksi Terakhir
         cursor.execute("""
-            SELECT id, tanggal, tipe, nominal, kategori, catatan, created_at
+            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, created_at
             FROM transaksi 
             WHERE user_id = %s 
             ORDER BY tanggal DESC, created_at DESC 
@@ -63,16 +63,31 @@ def get_semua_riwayat(user_id):
 
     try:
         cursor.execute("""
-            SELECT id, tanggal, tipe, nominal, kategori, catatan, created_at
+            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, created_at
             FROM transaksi 
             WHERE user_id = %s 
             ORDER BY tanggal DESC, created_at DESC
         """, (user_id,))
-        riwayat = cursor.fetchall()
+        transaksi = cursor.fetchall()
+        riwayat = {}
+
+        for item in transaksi:
+            tanggal = item['tanggal'].isoformat()
+            group = riwayat.setdefault(tanggal, {
+                'items': [],
+                'total_pemasukan': 0,
+                'total_pengeluaran': 0,
+            })
+            group['items'].append(item)
+            if item['tipe'] == 'pemasukan':
+                group['total_pemasukan'] += item['nominal']
+            else:
+                group['total_pengeluaran'] += item['nominal']
+
         return riwayat
     except Exception as e:
         print(f"Error get_semua_riwayat: {e}")
-        return []
+        return {}
     finally:
         cursor.close()
         conn.close()
