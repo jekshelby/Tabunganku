@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="padding: 16px 0;">
+    <!-- Header Back -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <a href="/login"
+            style="color: var(--text-primary); text-decoration: none; font-size: 1rem; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+            <i class="bi bi-arrow-left" style="font-size: 1.2rem;"></i> Login
+        </a>
+        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700;">Buat Akun</h3>
+        <div style="width: 50px;"></div>
+    </div>
+
+    <!-- Title Subtext -->
+    <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Daftar Akun
+            Baru</h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Mulai kelola keuangan pribadi kamu hari ini</p>
+    </div>
+
+    <!-- Alert Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div
+        style="padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: 0.85rem; font-weight: 500; text-align: center; background-color: var(--expense-bg); color: var(--expense-color); border: 1px solid var(--expense-color);">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Card Form -->
+    <div class="form-card">
+        <form action="/register" method="POST">
+            <div class="form-group">
+                <label for="nama">Nama Lengkap</label>
+                <div style="position: relative;">
+                    <input type="text" id="nama" name="nama" placeholder="Contoh: Alex Rivers" required
+                        style="padding-left: 40px;">
+                    <i class="bi bi-person-fill"
+                        style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 1rem;"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <div style="position: relative;">
+                    <input type="email" id="email" name="email" placeholder="nama@email.com" required
+                        style="padding-left: 40px;">
+                    <i class="bi bi-envelope-fill"
+                        style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 1rem;"></i>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="password">Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" placeholder="Minimal 6 karakter" minlength="6"
+                        required style="padding-left: 40px;">
+                    <i class="bi bi-lock-fill"
+                        style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 1rem;"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit btn-primary">
+                Buat Akun Sekarang
+            </button>
+        </form>
+
+        <div
+            style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                Sudah punya akun?
+                <a href="/login"
+                    style="color: var(--text-primary); font-weight: 700; text-decoration: none; margin-left: 4px;">Masuk</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Greeting Section -->
+<div class="user-greeting" style="margin-bottom: 20px;">
+    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+        Selamat datang,
+    </p>
+    <h2 style="margin: 2px 0 0 0; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">
+        {{ session.get('user_nama', 'Pengguna') }} 👋
+    </h2>
+</div>
+
+<!-- Kartu Saldo Utama -->
+<div class="dashboard-grid">
+    <div class="card saldo">
+        <div class="card-header-saldo">
+            <small>Saldo Utama</small>
+            <button id="toggleSaldoBtn" class="btn-toggle-privacy" onclick="togglePrivasiSaldo()"
+                title="Sembunyikan/Tampilkan Saldo">
+                <i id="eyeIcon" class="bi bi-eye-fill"></i>
+            </button>
+        </div>
+        <h3 id="saldoText" data-saldo="Rp {{ '{:,.0f}'.format(data.total_saldo).replace(',', '.') }}">
+            Rp {{ "{:,.0f}".format(data.sisa_saldo).replace(',', '.') }}
+        </h3>
+    </div>
+
+    <div class="sub-cards">
+        <div class="card pemasukan">
+            <small>Pemasukan</small>
+            <h4>Rp {{ "{:,.0f}".format(data.total_pemasukan).replace(',', '.') }}</h4>
+        </div>
+        <div class="card pengeluaran">
+            <small>Pengeluaran</small>
+            <h4>Rp {{ "{:,.0f}".format(data.total_pengeluaran).replace(',', '.') }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Tombol Utama Catat Transaksi -->
+<div style="margin-top: 16px; margin-bottom: 24px;">
+    <a href="/tambah" class="btn-catat-utama" style="text-decoration: none;">
+        <i class="bi bi-plus-circle-fill" style="font-size: 1.1rem;"></i>
+        Catat Transaksi
+    </a>
+</div>
+
+<!-- Preview 3 Riwayat Terbaru -->
+<div class="riwayat-section-dashboard">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1c1c1e;">Terbaru</h3>
+        <a href="/transaksi" style="font-size: 0.85rem; color: #007aff; text-decoration: none; font-weight: 600;">Lihat
+            Semua</a>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for item in data.riwayat %}
+        <div class="card-transaksi-item">
+            <div class="card-left">
+                <!-- Badge Kategori -->
+                <div class="badge-kategori {{ item.tipe }}">
+                    {% if item.tipe == 'pengeluaran' %}
+                    <i class="bi bi-tag-fill" style="font-size: 0.75rem;"></i>
+                    {% else %}
+                    <i class="bi bi-wallet2" style="font-size: 0.75rem;"></i>
+                    {% endif %}
+                    <span>{{ item.kategori }}</span>
+                </div>
+
+                <!-- Catatan / Keterangan -->
+                <div class="catatan-text">{{ item.catatan or item.kategori }}</div>
+
+                <!-- Sub-Badge Tanggal -->
+                <div class="badge-dompet">
+                    <i class="bi bi-calendar3" style="font-size: 0.7rem;"></i>
+                    <span>{{ item.tanggal }}</span>
+                </div>
+            </div>
+
+            <div class="card-right">
+                <!-- Nominal -->
+                <div class="nominal-text {{ item.tipe }}">
+                    {% if item.tipe == 'pengeluaran' %}-{% else %}+{% endif %}Rp {{
+                    "{:,.0f}".format(item.nominal).replace(',', '.') }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div
+            style="text-align: center; color: #8e8e93; padding: 24px 0; background: #ffffff; border-radius: 14px; border: 1px solid #e5e5ea;">
+            Belum ada data transaksi
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function togglePrivasiSaldo() {
+        const saldoElement = document.getElementById('saldoText');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const isHidden = localStorage.getItem('hideSaldo') === 'true';
+
+        if (isHidden) {
+            saldoElement.innerText = saldoElement.getAttribute('data-saldo');
+            eyeIcon.className = 'bi bi-eye-fill';
+            localStorage.setItem('hideSaldo', 'false');
+        } else {
+            saldoElement.innerText = 'Rp ****';
+            eyeIcon.className = 'bi bi-eye-slash';
+            localStorage.setItem('hideSaldo', 'true');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const isHidden = localStorage.getItem('hideSaldo') === 'true';
+        if (isHidden) {
+            const saldoElement = document.getElementById('saldoText');
+            const eyeIcon = document.getElementById('eyeIcon');
+            saldoElement.innerText = 'Rp ****';
+            eyeIcon.className = 'bi bi-eye-slash';
+        }
+    });
+</script>
+{% endblock %}

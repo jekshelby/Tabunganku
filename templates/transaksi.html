@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="transaksi-container">
+    <!-- Filter Bar Buttons -->
+    <div class="filter-container"
+        style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;">
+        <button type="button" class="btn-filter active" onclick="filterTransaksi('semua', this)">Semua</button>
+        <button type="button" class="btn-filter" onclick="filterTransaksi('pemasukan', this)">Pemasukan</button>
+        <button type="button" class="btn-filter" onclick="filterTransaksi('pengeluaran', this)">Pengeluaran</button>
+    </div>
+
+    {% if riwayat %}
+    {% for tanggal, data_group in riwayat.items() %}
+    <div class="group-tanggal" style="margin-bottom: 24px;">
+        <!-- Header Tanggal + Total Harian -->
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px;">
+            <!-- PERBAIKAN: Mengubah color dari #ffffff ke var(--text-primary) / #1c1c1e -->
+            <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">{{ tanggal }}</span>
+            <div style="font-weight: 700; font-size: 0.9rem; display: flex; gap: 8px;">
+                {% if data_group.total_pengeluaran > 0 %}
+                <span style="color: var(--expense-color);">-Rp {{
+                    "{:,.0f}".format(data_group.total_pengeluaran).replace(',', '.') }}</span>
+                {% endif %}
+                {% if data_group.total_pemasukan > 0 %}
+                <span style="color: var(--income-color);">+Rp {{
+                    "{:,.0f}".format(data_group.total_pemasukan).replace(',', '.') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- List Card Transaksi -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for item in data_group['items'] %}
+            <div class="card-transaksi-item {{ item.tipe }}">
+                <div class="card-left">
+                    <!-- Badge Kategori -->
+                    <div class="badge-kategori {{ item.tipe }}">
+                        {% if item.tipe == 'pengeluaran' %}
+                        <i class="bi bi-tag-fill" style="font-size: 0.75rem;"></i>
+                        {% else %}
+                        <i class="bi bi-wallet2" style="font-size: 0.75rem;"></i>
+                        {% endif %}
+                        <span>{{ item.kategori }}</span>
+                    </div>
+
+                    <!-- Catatan Opsional -->
+                    {% if item.catatan %}
+                    <div class="catatan-text">{{ item.catatan }}</div>
+                    {% endif %}
+
+                    <!-- Sub-Badge Wallet/Dompet -->
+                    <div class="badge-dompet">
+                        <i class="bi bi-wallet-fill" style="font-size: 0.7rem;"></i>
+                        <span>Dompet Utama</span>
+                    </div>
+                </div>
+
+                <div class="card-right">
+                    <!-- Nominal dengan Indikator Warna -->
+                    <div class="nominal-text {{ item.tipe }}">
+                        {% if item.tipe == 'pengeluaran' %}-{% else %}+{% endif %}Rp {{
+                        "{:,.0f}".format(item.nominal).replace(',', '.') }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="text-align: center; color: var(--text-secondary); padding: 60px 0;">
+        <i class="bi bi-receipt" style="font-size: 3rem; display: block; margin-bottom: 12px; color: #8e8e93;"></i>
+        Belum ada transaksi
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function filterTransaksi(tipe, btnElement) {
+        document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        const groupTanggal = document.querySelectorAll('.group-tanggal');
+
+        groupTanggal.forEach(group => {
+            const items = group.querySelectorAll('.card-transaksi-item');
+            let itemTampak = 0;
+
+            items.forEach(item => {
+                if (tipe === 'semua' || item.classList.contains(tipe)) {
+                    item.style.display = 'flex';
+                    itemTampak++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            if (itemTampak === 0) {
+                group.style.display = 'none';
+            } else {
+                group.style.display = 'block';
+            }
+        });
+    }
+</script>
+{% endblock %}

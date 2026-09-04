@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container">
+    <!-- Header/Brand -->
+    <div class="auth-header">
+        <div class="auth-icon-wrapper">
+            <i class="bi bi-wallet2 auth-icon"></i>
+        </div>
+        <h2 class="auth-title">Selamat Datang</h2>
+        <p class="auth-subtitle">Masuk ke akun CatatUang kamu</p>
+    </div>
+
+    <!-- Alert Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="auth-alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Card Form -->
+    <div class="form-card">
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <div class="input-icon-wrapper">
+                    <input type="email" id="email" name="email" placeholder="nama@email.com" required
+                        class="input-with-icon">
+                    <i class="bi bi-envelope-fill input-icon"></i>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="password">Password</label>
+                <div class="input-icon-wrapper">
+                    <input type="password" id="password" name="password" placeholder="••••••••" required
+                        class="input-with-icon">
+                    <i class="bi bi-lock-fill input-icon"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit btn-primary">
+                Masuk ke Akun
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>
+                Belum punya akun?
+                <a href="/register">Daftar Sekarang</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        padding: 20px 0;
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+    .auth-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background-color: var(--accent-dark);
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .auth-icon {
+        font-size: 1.8rem;
+        color: #ffffff;
+    }
+
+    .auth-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .auth-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .auth-alert {
+        padding: 12px 14px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+        border: 1px solid currentColor;
+    }
+
+    .alert-danger {
+        background-color: var(--expense-bg);
+        color: var(--expense-color);
+    }
+
+    .alert-success {
+        background-color: var(--income-bg);
+        color: var(--income-color);
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+    .input-with-icon {
+        padding-left: 40px !important;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .auth-footer p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .auth-footer a {
+        color: var(--text-primary);
+        font-weight: 700;
+        text-decoration: none;
+        margin-left: 4px;
+    }
+</style>
+{% endblock %}

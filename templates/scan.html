@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="form-card" style="text-align: center;">
+    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+        Scan Struk Belanja
+    </h3>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4;">
+        Pilih metode untuk mendeteksi total belanjaan secara otomatis.
+    </p>
+
+    <!-- Pilihan Kamera / Galeri -->
+    <div class="scan-options" style="margin-bottom: 16px;">
+        <button id="btnOpenCam" class="btn-scan-option primary" onclick="bukaWebcam()">
+            <i class="bi bi-camera-fill" style="font-size: 1.5rem;"></i>
+            <span>Open Cam</span>
+        </button>
+
+        <label for="galleryInput" class="btn-scan-option">
+            <i class="bi bi-images" style="font-size: 1.5rem; color: var(--text-primary);"></i>
+            <span>Galeri / File</span>
+        </label>
+        <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="prosesFileGaleri(event)">
+    </div>
+
+    <!-- Container Webcam Video -->
+    <div id="webcamContainer" style="display: none; margin-top: 16px;">
+        <video id="webcamVideo" autoplay playsinline
+            style="width: 100%; max-height: 300px; border-radius: 12px; background-color: #000; object-fit: cover;"></video>
+        <button onclick="ambilGambarWebcam()" class="btn-submit" style="margin-top: 12px;">
+            <i class="bi bi-camera"></i> Ambil Foto Struk
+        </button>
+    </div>
+
+    <canvas id="webcamCanvas" style="display: none;"></canvas>
+
+    <!-- Preview Gambar Struk -->
+    <div id="previewContainer" style="display: none; margin-top: 16px;">
+        <img id="imagePreview" src="" alt="Preview Struk"
+            style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border-color);">
+    </div>
+
+    <!-- Loading OCR -->
+    <div id="loadingOCR" style="display: none; margin-top: 24px; padding: 12px;">
+        <div class="spinner"
+            style="display: inline-block; width: 28px; height: 28px; border: 3px solid var(--border-color); border-top-color: var(--accent-dark); border-radius: 50%; animation: spin 0.8s linear infinite;">
+        </div>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-top: 10px;">
+            Menganalisis struk di server...
+        </p>
+    </div>
+
+    <!-- Hasil Terdeteksi -->
+    <div id="hasilContainer"
+        style="display: none; margin-top: 20px; padding: 16px; background-color: #fafafa; border-radius: 14px; border: 1px solid var(--border-color); text-align: left;">
+        <small
+            style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;">
+            Total Terdeteksi:
+        </small>
+        <h2 id="textTotalNominal"
+            style="color: var(--expense-color); font-size: 1.8rem; font-weight: 700; margin: 4px 0 16px 0; letter-spacing: -0.5px;">
+            Rp 0
+        </h2>
+
+        <button id="btnLanjutCatat" class="btn-submit"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i class="bi bi-arrow-right-circle-fill" style="font-size: 1.1rem;"></i> Gunakan Nominal Ini
+        </button>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<script>
+    let videoStream = null;
+
+    async function bukaWebcam() {
+        const webcamContainer = document.getElementById('webcamContainer');
+        const webcamVideo = document.getElementById('webcamVideo');
+        document.getElementById('previewContainer').style.display = 'none';
+        document.getElementById('hasilContainer').style.display = 'none';
+
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            webcamVideo.srcObject = videoStream;
+            webcamContainer.style.display = 'block';
+        } catch (err) {
+            alert("Gagal mengakses kamera.");
+        }
+    }
+
+    function ambilGambarWebcam() {
+        const webcamVideo = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('webcamCanvas');
+        const context = canvas.getContext('2d');
+
+        canvas.width = webcamVideo.videoWidth;
+        canvas.height = webcamVideo.videoHeight;
+        context.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
+
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+        document.getElementById('webcamContainer').style.display = 'none';
+
+        canvas.toBlob((blob) => {
+            kirimGambarKeServer(blob);
+        }, 'image/jpeg');
+    }
+
+    function prosesFileGaleri(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            document.getElementById('webcamContainer').style.display = 'none';
+        }
+
+        kirimGambarKeServer(file);
+    }
+
+    // Mengirim file ke backend Flask Python
+    async function kirimGambarKeServer(fileBlob) {
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const loadingOCR = document.getElementById('loadingOCR');
+        const hasilContainer = document.getElementById('hasilContainer');
+
+        imagePreview.src = URL.createObjectURL(fileBlob);
+        previewContainer.style.display = 'block';
+        loadingOCR.style.display = 'block';
+        hasilContainer.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('file', fileBlob, 'struk.jpg');
+
+        try {
+            const response = await fetch('/api/scan-ocr', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const nominalTotal = data.nominal;
+                document.getElementById('textTotalNominal').innerText = 'Rp ' + nominalTotal.toLocaleString('id-ID');
+                hasilContainer.style.display = 'block';
+
+                // Arahkan langsung ke form pencatatan (/tambah) dengan query parameter nominal
+                document.getElementById('btnLanjutCatat').onclick = function () {
+                    window.location.href = `/tambah?nominal=${nominalTotal}`;
+                };
+            } else {
+                alert("Gagal membaca struk.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Terjadi kesalahan koneksi saat memproses gambar.");
+        } finally {
+            loadingOCR.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

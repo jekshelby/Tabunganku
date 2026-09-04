@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Header Atas dengan Tombol Batal/Kembali -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+    <a href="/"
+        style="color: #000000; text-decoration: none; font-size: 1.2rem; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+    <h3 style="margin: 0; font-size: 1.1rem;">Tambah Transaksi</h3>
+    <div style="width: 60px;"></div> <!-- Spacer penyeimbang layout -->
+</div>
+
+<div class="form-card">
+    <!-- Toggle Tab Switcher -->
+    <div class="tab-switcher"
+        style="display: flex; gap: 8px; background: #eef0f3; padding: 4px; border-radius: 12px; margin-bottom: 20px;">
+        <button type="button" id="tabPengeluaran" onclick="switchTipe('pengeluaran')"
+            style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            Pengeluaran
+        </button>
+        <button type="button" id="tabPemasukan" onclick="switchTipe('pemasukan')"
+            style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            Pemasukan
+        </button>
+    </div>
+
+    <form action="/tambah" method="POST">
+        <!-- Hidden input tipe transaksi -->
+        <input type="hidden" id="inputTipe" name="tipe" value="pengeluaran">
+
+        <div class="form-group">
+            <label>Nominal (Rp)</label>
+            <input type="number" id="inputNominal" name="nominal" placeholder="Contoh: 50000" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <label>Kategori</label>
+            <select id="selectKategori" name="kategori" required>
+                <!-- Diisi via JavaScript -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Catatan</label>
+            <input type="text" name="catatan" placeholder="Keterangan singkat (misal: Makan Siang)">
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn-submit btn-primary"
+            style="cursor: pointer; width: 100%; margin-top: 10px;">
+            Simpan Transaksi
+        </button>
+    </form>
+</div>
+
+<script>
+    const dataKategori = JSON.parse('{{ kategori | tojson | safe }}');
+
+    function switchTipe(tipe) {
+        document.getElementById('inputTipe').value = tipe;
+
+        const tabPengeluaran = document.getElementById('tabPengeluaran');
+        const tabPemasukan = document.getElementById('tabPemasukan');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        if (tipe === 'pengeluaran') {
+            tabPengeluaran.style.backgroundColor = '#000000';
+            tabPengeluaran.style.color = '#ffffff';
+
+            tabPemasukan.style.backgroundColor = 'transparent';
+            tabPemasukan.style.color = '#6e6e73';
+
+            btnSubmit.innerText = 'Simpan Pengeluaran';
+            btnSubmit.style.backgroundColor = '#000000';
+        } else {
+            tabPemasukan.style.backgroundColor = '#2e7d32';
+            tabPemasukan.style.color = '#ffffff';
+
+            tabPengeluaran.style.backgroundColor = 'transparent';
+            tabPengeluaran.style.color = '#6e6e73';
+
+            btnSubmit.innerText = 'Simpan Pemasukan';
+            btnSubmit.style.backgroundColor = '#2e7d32';
+        }
+
+        // Render opsi kategori berdasarkan tipe
+        const selectKategori = document.getElementById('selectKategori');
+        selectKategori.innerHTML = '';
+        const opsiTersedia = dataKategori[tipe] || [];
+
+        opsiTersedia.forEach(kat => {
+            const option = document.createElement('option');
+            option.value = kat;
+            option.textContent = kat;
+            selectKategori.appendChild(option);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Default awal ke Pengeluaran
+        switchTipe('pengeluaran');
+
+        // Isi nominal otomatis jika ada dari Scan OCR
+        const urlParams = new URLSearchParams(window.location.search);
+        const nominalOCR = urlParams.get('nominal');
+
+        if (nominalOCR && nominalOCR !== '0') {
+            const inputNominal = document.getElementById('inputNominal');
+            inputNominal.value = nominalOCR;
+            inputNominal.focus();
+        }
+    });
+</script>
+{% endblock %}

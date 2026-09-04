@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2953/2953361.png">
+
+    <title>CatatUang Mobile</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((reg) => console.log('Service Worker Registered!', reg))
+                    .catch((err) => console.log('Service Worker Registration Failed!', err));
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="mobile-canvas">
+        <header class="app-header">
+            <h2>CatatUang</h2>
+        </header>
+
+        <main class="app-content" {% if request.path=='/tambah' %}style="padding-bottom: 20px;" {% endif %}>
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Hide Bottom Nav jika berada di halaman /tambah -->
+        {% if request.path not in ['/tambah', '/login', '/register'] %}
+        <nav class="bottom-nav">
+            <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                <i class="bi bi-house-door-fill nav-icon"></i>
+                <span>Home</span>
+            </a>
+            <a href="/scan" class="nav-item {% if request.path == '/scan' %}active{% endif %}">
+                <i class="bi bi-qr-code-scan nav-icon"></i>
+                <span>Scan</span>
+            </a>
+            <a href="/transaksi" class="nav-item {% if request.path == '/transaksi' %}active{% endif %}">
+                <i class="bi bi-receipt nav-icon"></i>
+                <span>Transaksi</span>
+            </a>
+        </nav>
+        {% endif %}
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,464 @@
+/* ==========================================================================
+   1. RESET & VARIABLE PALETTE
+   ========================================================================== */
+:root {
+    --bg-main: #f2f2f7;
+    --card-bg: #ffffff;
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --border-color: #e5e5ea;
+    
+    /* System Accent Colors */
+    --accent-dark: #1c1c1e;
+    --income-color: #34c759;
+    --income-bg: rgba(52, 199, 89, 0.12);
+    --expense-color: #ff3b30;
+    --expense-bg: rgba(255, 59, 48, 0.12);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background-color: #000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* ==========================================================================
+   2. APP FRAME & HEADER
+   ========================================================================== */
+.mobile-canvas {
+    width: 100%;
+    max-width: 430px;
+    height: 100vh;
+    max-height: 932px;
+    background-color: var(--bg-main);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.app-header {
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    text-align: center;
+}
+
+.app-header h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+}
+
+.app-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 90px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Hide Scrollbar */
+.app-content::-webkit-scrollbar {
+    display: none;
+}
+
+/* ==========================================================================
+   3. BOTTOM NAVIGATION BAR
+   ========================================================================== */
+.bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    background-color: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 12px;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 500;
+    gap: 3px;
+    padding: 6px 16px;
+    border-radius: 18px;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.nav-item.active {
+    color: var(--text-primary);
+    background-color: #e5e5ea;
+    font-weight: 600;
+}
+
+.nav-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+/* ==========================================================================
+   4. DASHBOARD & CARDS
+   ========================================================================== */
+.dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.card.saldo {
+    background-color: var(--accent-dark);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card small {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.card.saldo small {
+    color: #a1a1a6;
+}
+
+.card h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-top: 4px;
+}
+
+.card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.pemasukan h4 { color: var(--income-color); }
+.pengeluaran h4 { color: var(--expense-color); }
+
+.card-header-saldo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-toggle-privacy {
+    background: transparent;
+    border: none;
+    color: #a1a1a6;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+}
+
+.sub-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sub-cards .card {
+    padding: 14px;
+}
+
+/* Tombol Akses Cepat */
+.btn-catat-utama {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--accent-dark);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   5. FILTER BUTTONS (HALAMAN TRANSAKSI)
+   ========================================================================== */
+.filter-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.btn-filter {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-filter.active {
+    background-color: var(--accent-dark);
+    color: #ffffff;
+    border-color: var(--accent-dark);
+}
+
+/* Header Tanggal / Grouping */
+.header-tanggal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.header-tanggal .tgl-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.header-tanggal .total-rekap {
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   6. TRANSAKSI CARD ITEM (SERAGAM DENGAN THEME LIGHT)
+   ========================================================================== */
+.card-transaksi-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.card-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.badge-kategori {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.badge-kategori.pengeluaran {
+    background-color: var(--expense-bg);
+    color: var(--expense-color);
+}
+
+.badge-kategori.pemasukan {
+    background-color: var(--income-bg);
+    color: var(--income-color);
+}
+
+.catatan-text {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.badge-dompet {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.nominal-text {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.nominal-text.pengeluaran { color: var(--expense-color); }
+.nominal-text.pemasukan { color: var(--income-color); }
+
+/* ==========================================================================
+   7. FORM COMPONENT & TYPE TOGGLE SWITCH
+   ========================================================================== */
+.form-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+/* Switcher Pemasukan/Pengeluaran */
+.type-switch {
+    display: flex;
+    background-color: #e5e5ea;
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 18px;
+}
+
+.type-btn {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.type-btn.active.pemasukan {
+    background-color: var(--income-color);
+    color: #ffffff;
+}
+
+.type-btn.active.pengeluaran {
+    background-color: var(--expense-color);
+    color: #ffffff;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background-color: #fafafa;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--accent-dark);
+    background-color: #ffffff;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--accent-dark);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-top: 8px;
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   8. SCAN COMPONENT
+   ========================================================================== */
+.scan-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.btn-scan-option {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-scan-option.primary {
+    background-color: var(--accent-dark);
+    color: #ffffff;
+    border: none;
+}
+
+/* ==========================================================================
+   9. MEDIA QUERIES
+   ========================================================================== */
+@media (max-width: 480px) {
+    .mobile-canvas {
+        max-width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        box-shadow: none;
+    }
+}
