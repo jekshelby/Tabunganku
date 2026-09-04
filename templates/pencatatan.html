@@ -57,7 +57,9 @@
     const dataKategori = JSON.parse('{{ kategori | tojson | safe }}');
 
     function switchTipe(tipe) {
-        document.getElementById('inputTipe').value = tipe;
+        // Simpan dengan huruf kapital pertama jika DB kamu butuh 'Pengeluaran' / 'Pemasukan'
+        const tipeFormatted = tipe.charAt(0).toUpperCase() + tipe.slice(1);
+        document.getElementById('inputTipe').value = tipeFormatted;
 
         const tabPengeluaran = document.getElementById('tabPengeluaran');
         const tabPemasukan = document.getElementById('tabPemasukan');
@@ -86,6 +88,8 @@
         // Render opsi kategori berdasarkan tipe
         const selectKategori = document.getElementById('selectKategori');
         selectKategori.innerHTML = '';
+
+        // Mengambil opsi berdasarkan kunci huruf kecil
         const opsiTersedia = dataKategori[tipe] || [];
 
         opsiTersedia.forEach(kat => {

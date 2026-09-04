@@ -37,7 +37,7 @@
             {% block content %}{% endblock %}
         </main>
 
-        <!-- Hide Bottom Nav jika berada di halaman /tambah -->
+        <!-- Hide Bottom Nav jika berada di halaman /tambah, /login, atau /register -->
         {% if request.path not in ['/tambah', '/login', '/register'] %}
         <nav class="bottom-nav">
             <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">

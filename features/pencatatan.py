@@ -3,7 +3,7 @@ from db import get_db_connection
 def get_kategori_transaksi():
     """Mengembalikan daftar kategori default untuk transaksi."""
     return {
-        'Pengeluaran': [
+        'pengeluaran': [
             'Makanan & Minuman',
             'Transportasi',
             'Belanja',
@@ -12,7 +12,7 @@ def get_kategori_transaksi():
             'Kesehatan',
             'Lainnya'
         ],
-        'Pemasukan': [
+        'pemasukan': [
             'Gaji',
             'Bonus',
             'Investasi',
