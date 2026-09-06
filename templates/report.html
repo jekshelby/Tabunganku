@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Ringkasan keuangan</p>
+        <h2>Report</h2>
+    </div>
+    <i class="bi bi-bar-chart-line-fill page-heading-icon"></i>
+</div>
+
+<div class="form-card report-filter-card">
+    <form method="GET" action="{{ url_for('report') }}" class="report-filter">
+        <div class="report-mode">
+            <a href="{{ url_for('report', periode='month', nilai=report.period_value if report.period_type == 'month' else '') }}" class="filter-mode {% if report.period_type == 'month' %}active{% endif %}">Bulanan</a>
+            <a href="{{ url_for('report', periode='year', nilai=report.period_value if report.period_type == 'year' else '') }}" class="filter-mode {% if report.period_type == 'year' %}active{% endif %}">Tahunan</a>
+        </div>
+        {% if report.period_type == 'month' %}
+        <input type="month" name="nilai" value="{{ report.period_value }}">
+        {% else %}
+        <input type="number" name="nilai" min="2000" max="2100" value="{{ report.period_value }}">
+        {% endif %}
+        <input type="hidden" name="periode" value="{{ report.period_type }}">
+        <button class="btn-submit" type="submit"><i class="bi bi-arrow-right"></i> Tampilkan</button>
+    </form>
+</div>
+
+<div class="report-summary-grid">
+    <div class="report-stat income-stat"><span>Pemasukan</span><strong>Rp {{ "{:,.0f}".format(report.pemasukan).replace(',', '.') }}</strong><small>{{ report.jumlah_transaksi }} transaksi</small></div>
+    <div class="report-stat expense-stat"><span>Pengeluaran</span><strong>Rp {{ "{:,.0f}".format(report.pengeluaran).replace(',', '.') }}</strong><small>Transaksi utama</small></div>
+    <div class="report-stat saving-stat"><span>Setor tabungan</span><strong>Rp {{ "{:,.0f}".format(report.setor).replace(',', '.') }}</strong><small>{{ report.jumlah_mutasi }} aktivitas</small></div>
+    <div class="report-stat withdraw-stat"><span>Tarik tabungan</span><strong>Rp {{ "{:,.0f}".format(report.tarik).replace(',', '.') }}</strong><small>Periode terpilih</small></div>
+</div>
+
+<div class="report-net card">
+    <div><small>Arus bersih periode</small><h3>Rp {{ "{:,.0f}".format(report.saldo_transaksi + report.arus_tabungan).replace(',', '.') }}</h3></div>
+    <i class="bi bi-activity"></i>
+</div>
+
+<div class="report-section">
+    <div class="section-heading"><div><h3>Rincian kategori</h3><p>Transaksi utama pada periode ini.</p></div><i class="bi bi-pie-chart-fill"></i></div>
+    <div class="report-list">
+        {% for item in report.kategori %}
+        <div class="report-row"><div><strong>{{ item.kategori }}</strong><span>{{ item.tipe|capitalize }}</span></div><strong class="{{ item.tipe }}">Rp {{ "{:,.0f}".format(item.total).replace(',', '.') }}</strong></div>
+        {% else %}<div class="empty-state compact"><i class="bi bi-bar-chart"></i><p>Belum ada transaksi pada periode ini.</p></div>{% endfor %}
+    </div>
+</div>
+
+<div class="report-section">
+    <div class="section-heading"><div><h3>Posisi tabungan</h3><p>Saldo target saat ini, termasuk semua riwayat.</p></div><i class="bi bi-piggy-bank-fill"></i></div>
+    <div class="report-list">
+        {% for item in report.target_tabungan %}
+        <div class="report-row"><div><strong>{{ item.nama }}</strong><span>{{ item.status|capitalize }} · Target Rp {{ "{:,.0f}".format(item.target_nominal).replace(',', '.') }}</span></div><strong>Rp {{ "{:,.0f}".format(item.saldo).replace(',', '.') }}</strong></div>
+        {% else %}<div class="empty-state compact"><i class="bi bi-piggy-bank"></i><p>Belum ada target tabungan.</p></div>{% endfor %}
+    </div>
+</div>
+{% endblock %}

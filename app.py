@@ -12,7 +12,13 @@ from features.pencatatan import (
     simpan_transaksi_baru,
 )
 from features.ocr import ekstraksi_total_struk
-from features.auth import register_user, check_user_login
+from features.auth import (
+    check_user_login,
+    get_user_profile,
+    register_user,
+    update_user_profile,
+)
+from features.report import get_laporan_keuangan
 from features.tabungan import (
     buat_tabungan,
     edit_target_tabungan,
@@ -135,6 +141,31 @@ def transaksi():
     riwayat_lengkap = get_semua_riwayat(user_id) or {}
 
     return render_template('transaksi.html', riwayat=riwayat_lengkap)
+
+@app.route('/report')
+@login_required
+def report():
+    period_type = request.args.get('periode', 'month')
+    period_value = request.args.get('nilai')
+    data_report = get_laporan_keuangan(session['user_id'], period_type, period_value)
+    return render_template('report.html', report=data_report)
+
+@app.route('/akun', methods=['GET', 'POST'])
+@login_required
+def akun():
+    user_id = session['user_id']
+    if request.method == 'POST':
+        success, message = update_user_profile(
+            user_id,
+            request.form.get('nama'),
+            request.form.get('email'),
+            request.form.get('password') or None,
+        )
+        if success:
+            session['user_nama'] = request.form.get('nama', '').strip()
+        flash(message, 'success' if success else 'danger')
+        return redirect(url_for('akun'))
+    return render_template('akun.html', profile=get_user_profile(user_id))
 
 @app.route('/transaksi/<int:transaksi_id>/edit', methods=['GET', 'POST'])
 @login_required

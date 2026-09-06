@@ -49,9 +49,13 @@ body {
 }
 
 .app-header {
+    align-items: center;
     background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: center;
     padding: 16px;
+    position: relative;
     text-align: center;
 }
 
@@ -60,6 +64,16 @@ body {
     font-weight: 700;
     letter-spacing: -0.3px;
     color: var(--text-primary);
+}
+
+.account-shortcut {
+    color: var(--text-primary);
+    font-size: 1.35rem;
+    line-height: 1;
+    position: absolute;
+    right: 16px;
+    text-decoration: none;
+    top: 15px;
 }
 
 .app-content {
@@ -877,7 +891,128 @@ body {
 }
 
 /* ============================================================================
-    10. MEDIA QUERIES
+   10. REPORT AND ACCOUNT
+   ========================================================================== */
+.report-filter-card { margin-bottom: 14px; }
+
+.report-filter { display: flex; flex-direction: column; gap: 10px; }
+
+.report-mode {
+    background: #eef0f3;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 3px;
+}
+
+.filter-mode {
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 9px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.filter-mode.active { background: var(--card-bg); color: var(--text-primary); }
+
+.report-filter input {
+    background: #fafafa;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    padding: 11px;
+    width: 100%;
+}
+
+.report-filter .btn-submit { margin-top: 0; }
+
+.report-summary-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 10px;
+}
+
+.report-stat {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 13px;
+}
+
+.report-stat span, .report-stat small { color: var(--text-secondary); font-size: 0.7rem; }
+.report-stat strong { color: var(--text-primary); font-size: 0.95rem; }
+.report-stat.income-stat strong, .report-stat.saving-stat strong { color: var(--income-color); }
+.report-stat.expense-stat strong, .report-stat.withdraw-stat strong { color: var(--expense-color); }
+
+.report-net {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.report-net small { color: var(--text-secondary); font-size: 0.75rem; }
+.report-net h3 { color: var(--text-primary); font-size: 1.35rem; margin-top: 4px; }
+.report-net > i { color: var(--income-color); font-size: 1.8rem; }
+.report-section { margin-bottom: 24px; }
+.report-list { display: flex; flex-direction: column; gap: 8px; }
+
+.report-row {
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px;
+}
+
+.report-row > div { display: flex; flex-direction: column; min-width: 0; }
+.report-row strong { color: var(--text-primary); font-size: 0.82rem; }
+.report-row strong.pemasukan { color: var(--income-color); }
+.report-row strong.pengeluaran { color: var(--expense-color); }
+.report-row span { color: var(--text-secondary); font-size: 0.7rem; margin-top: 3px; }
+
+.account-identity {
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 15px;
+}
+
+.account-avatar {
+    align-items: center;
+    background: var(--accent-dark);
+    border-radius: 50%;
+    color: #ffffff;
+    display: flex;
+    flex: 0 0 44px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    height: 44px;
+    justify-content: center;
+    width: 44px;
+}
+
+.account-identity div:last-child { display: flex; flex-direction: column; min-width: 0; }
+.account-identity strong { color: var(--text-primary); font-size: 0.95rem; }
+.account-identity span { color: var(--text-secondary); font-size: 0.78rem; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; }
+.account-logout { color: var(--expense-color); display: block; font-size: 0.85rem; font-weight: 700; margin: 18px 4px; text-decoration: none; }
+
+/* ============================================================================
+    11. MEDIA QUERIES
    ========================================================================== */
 @media (max-width: 480px) {
     .mobile-canvas {

@@ -31,6 +31,11 @@
     <div class="mobile-canvas">
         <header class="app-header">
             <h2>CatatUang</h2>
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('akun') }}" class="account-shortcut" title="Pengaturan akun" aria-label="Pengaturan akun">
+                <i class="bi bi-person-circle"></i>
+            </a>
+            {% endif %}
         </header>
 
         <main class="app-content" {% if request.path=='/tambah' %}style="padding-bottom: 20px;" {% endif %}>
@@ -47,6 +52,10 @@
             <a href="/tabungan" class="nav-item {% if request.path.startswith('/tabungan') %}active{% endif %}">
                 <i class="bi bi-piggy-bank-fill nav-icon"></i>
                 <span>Tabungan</span>
+            </a>
+            <a href="/report" class="nav-item {% if request.path.startswith('/report') %}active{% endif %}">
+                <i class="bi bi-bar-chart-line-fill nav-icon"></i>
+                <span>Report</span>
             </a>
             <a href="/scan" class="nav-item {% if request.path == '/scan' %}active{% endif %}">
                 <i class="bi bi-qr-code-scan nav-icon"></i>

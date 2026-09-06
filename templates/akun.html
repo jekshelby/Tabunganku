@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Pengaturan pengguna</p>
+        <h2>Akun saya</h2>
+    </div>
+    <i class="bi bi-person-circle page-heading-icon"></i>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="auth-alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="account-identity">
+    <div class="account-avatar">{{ profile.nama[:1]|upper }}</div>
+    <div><strong>{{ profile.nama }}</strong><span>{{ profile.email }}</span></div>
+</div>
+
+<div class="form-card">
+    <div class="section-heading"><div><h3>Data profil</h3><p>Perbarui informasi akun Anda.</p></div><i class="bi bi-pencil-square"></i></div>
+    <form method="POST">
+        <div class="form-group"><label for="nama">Nama</label><input type="text" id="nama" name="nama" maxlength="100" value="{{ profile.nama }}" required></div>
+        <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" maxlength="100" value="{{ profile.email }}" required></div>
+        <div class="form-group"><label for="password">Password baru</label><input type="password" id="password" name="password" minlength="6" placeholder="Kosongkan jika tidak diubah"></div>
+        <button type="submit" class="btn-submit"><i class="bi bi-check-lg"></i> Simpan Perubahan</button>
+    </form>
+</div>
+
+<a href="{{ url_for('logout') }}" class="account-logout"><i class="bi bi-box-arrow-right"></i> Keluar dari akun</a>
+{% endblock %}
