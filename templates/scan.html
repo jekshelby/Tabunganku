@@ -163,7 +163,7 @@
                     window.location.href = `/tambah?nominal=${nominalTotal}`;
                 };
             } else {
-                alert("Gagal membaca struk.");
+                alert(data.message || "Gagal membaca struk.");
             }
         } catch (err) {
             console.error(err);

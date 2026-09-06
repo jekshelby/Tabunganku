@@ -298,7 +298,10 @@ def api_scan_ocr():
     if file.filename == '':
         return jsonify({'success': False, 'message': 'File kosong'}), 400
 
-    nominal = ekstraksi_total_struk(file)
+    nominal, error_message = ekstraksi_total_struk(file)
+    if error_message:
+        return jsonify({'success': False, 'message': error_message}), 502
+
     return jsonify({
         'success': True,
         'nominal': nominal
