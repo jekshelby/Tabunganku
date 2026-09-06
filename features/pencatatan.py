@@ -1,4 +1,14 @@
+from decimal import Decimal, InvalidOperation
+
 from db import get_db_connection
+
+
+def _parse_nominal(value):
+    try:
+        nominal = Decimal(str(value).strip())
+    except (InvalidOperation, AttributeError):
+        return None
+    return nominal if nominal > 0 else None
 
 def get_kategori_transaksi():
     """Mengembalikan daftar kategori default untuk transaksi."""
@@ -32,7 +42,8 @@ def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan=""):
             return False
         if not kategori or not str(kategori).strip():
             return False
-        if not nominal or float(nominal) <= 0:
+        nominal = _parse_nominal(nominal)
+        if not nominal:
             return False
 
         query = """
@@ -48,4 +59,69 @@ def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan=""):
         return False
     finally:
         cursor.close()
+        conn.close()
+
+
+def get_transaksi(user_id, transaksi_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, tanggal, tipe, nominal, kategori, catatan
+                FROM transaksi
+                WHERE id = %s AND user_id = %s
+                """,
+                (transaksi_id, user_id),
+            )
+            return cursor.fetchone()
+    finally:
+        conn.close()
+
+
+def edit_transaksi(user_id, transaksi_id, tipe, nominal, kategori, catatan=''):
+    tipe = (tipe or '').strip().capitalize()
+    nominal = _parse_nominal(nominal)
+    kategori = (kategori or '').strip()
+    if tipe not in {'Pemasukan', 'Pengeluaran'} or not nominal or not kategori:
+        return False
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE transaksi
+                SET tipe = %s, nominal = %s, kategori = %s, catatan = %s
+                WHERE id = %s AND user_id = %s
+                """,
+                (tipe, nominal, kategori, (catatan or '').strip() or None, transaksi_id, user_id),
+            )
+            updated = cursor.rowcount == 1
+        conn.commit()
+        return updated
+    except Exception as error:
+        conn.rollback()
+        print(f'Error edit transaksi: {error}')
+        return False
+    finally:
+        conn.close()
+
+
+def hapus_transaksi(user_id, transaksi_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'DELETE FROM transaksi WHERE id = %s AND user_id = %s',
+                (transaksi_id, user_id),
+            )
+            deleted = cursor.rowcount == 1
+        conn.commit()
+        return deleted
+    except Exception as error:
+        conn.rollback()
+        print(f'Error hapus transaksi: {error}')
+        return False
+    finally:
         conn.close()

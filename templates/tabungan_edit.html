@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="detail-topbar">
+    <a href="{{ url_for('detail_tabungan', tabungan_id=tabungan.id) }}" class="back-link"><i class="bi bi-arrow-left"></i> Detail tabungan</a>
+    <span class="eyebrow">Edit target</span>
+</div>
+
+<div class="form-card">
+    <div class="section-heading">
+        <div>
+            <h3>Ubah target tabungan</h3>
+            <p>Saldo yang sudah terkumpul tetap aman.</p>
+        </div>
+        <i class="bi bi-sliders"></i>
+    </div>
+    <form method="POST">
+        <div class="form-group">
+            <label for="nama">Nama tabungan</label>
+            <input type="text" id="nama" name="nama" maxlength="100" value="{{ tabungan.nama }}" required>
+        </div>
+        <div class="form-group">
+            <label for="target_nominal">Target nominal (Rp)</label>
+            <input type="number" id="target_nominal" name="target_nominal" min="1" step="0.01" value="{{ tabungan.target_nominal }}" required>
+        </div>
+        <div class="form-group">
+            <label for="deadline">Deadline</label>
+            <input type="date" id="deadline" name="deadline" value="{{ tabungan.deadline or '' }}">
+        </div>
+        <button type="submit" class="btn-submit"><i class="bi bi-check-lg"></i> Simpan Target</button>
+    </form>
+</div>
+{% endblock %}

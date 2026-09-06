@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Rencana keuangan</p>
+        <h2>Tabungan</h2>
+    </div>
+    <i class="bi bi-piggy-bank-fill page-heading-icon"></i>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="auth-alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="form-card savings-create-card">
+    <div class="section-heading">
+        <div>
+            <h3>Target baru</h3>
+            <p>Buat tujuan dan pantau progresnya.</p>
+        </div>
+        <i class="bi bi-plus-circle-fill"></i>
+    </div>
+    <form action="{{ url_for('tabungan') }}" method="POST">
+        <div class="form-group">
+            <label for="nama">Nama tabungan</label>
+            <input type="text" id="nama" name="nama" maxlength="100" placeholder="Contoh: Dana darurat" required>
+        </div>
+        <div class="savings-form-grid">
+            <div class="form-group">
+                <label for="target_nominal">Target (Rp)</label>
+                <input type="number" id="target_nominal" name="target_nominal" min="1" step="0.01" placeholder="10000000" required>
+            </div>
+            <div class="form-group">
+                <label for="deadline">Deadline</label>
+                <input type="date" id="deadline" name="deadline">
+            </div>
+        </div>
+        <input type="hidden" name="warna" value="#1c1c1e">
+        <button type="submit" class="btn-submit"><i class="bi bi-plus-lg"></i> Buat Tabungan</button>
+    </form>
+</div>
+
+<div class="section-heading savings-list-heading">
+    <div>
+        <h3>Target saya</h3>
+        <p>{{ tabungan|length }} target tersimpan</p>
+    </div>
+</div>
+
+<div class="savings-list">
+    {% for item in tabungan %}
+    {% set progress = (item.saldo / item.target_nominal * 100) if item.target_nominal else 0 %}
+    {% if progress > 100 %}{% set progress = 100 %}{% endif %}
+    <a class="savings-card" href="{{ url_for('detail_tabungan', tabungan_id=item.id) }}">
+        <div class="savings-card-top">
+            <div class="savings-symbol" style="background-color: {{ item.warna }}"><i class="bi bi-bullseye"></i></div>
+            <div class="savings-card-title">
+                <h3>{{ item.nama }}</h3>
+                <span class="status-pill {{ item.status }}">{{ item.status|capitalize }}</span>
+            </div>
+            <i class="bi bi-chevron-right savings-arrow"></i>
+        </div>
+        <div class="savings-amounts">
+            <strong>Rp {{ "{:,.0f}".format(item.saldo).replace(',', '.') }}</strong>
+            <span>of Rp {{ "{:,.0f}".format(item.target_nominal).replace(',', '.') }}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width: {{ progress }}%; background-color: {{ item.warna }}"></div></div>
+        <div class="savings-meta">
+            <span>{{ "{:,.0f}".format(progress) }}% tercapai</span>
+            {% if item.deadline %}<span>Target {{ item.deadline }}</span>{% else %}<span>Tanpa deadline</span>{% endif %}
+        </div>
+    </a>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-piggy-bank"></i>
+        <h3>Belum ada target</h3>
+        <p>Buat target pertama untuk mulai menabung.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

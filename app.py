@@ -4,9 +4,23 @@ from datetime import timedelta
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
 
 from features.dashboard import get_ringkasan_keuangan, get_semua_riwayat
-from features.pencatatan import get_kategori_transaksi, simpan_transaksi_baru
+from features.pencatatan import (
+    edit_transaksi,
+    get_kategori_transaksi,
+    get_transaksi,
+    hapus_transaksi,
+    simpan_transaksi_baru,
+)
 from features.ocr import ekstraksi_total_struk
 from features.auth import register_user, check_user_login
+from features.tabungan import (
+    buat_tabungan,
+    edit_target_tabungan,
+    get_detail_tabungan,
+    get_semua_tabungan,
+    hapus_tabungan,
+    simpan_mutasi_tabungan,
+)
 
 app = Flask(__name__)
 
@@ -121,6 +135,117 @@ def transaksi():
     riwayat_lengkap = get_semua_riwayat(user_id) or {}
 
     return render_template('transaksi.html', riwayat=riwayat_lengkap)
+
+@app.route('/transaksi/<int:transaksi_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_transaksi_route(transaksi_id):
+    user_id = session['user_id']
+    transaksi_data = get_transaksi(user_id, transaksi_id)
+    if not transaksi_data:
+        flash('Transaksi tidak ditemukan.', 'danger')
+        return redirect(url_for('transaksi'))
+
+    if request.method == 'POST':
+        success = edit_transaksi(
+            user_id,
+            transaksi_id,
+            request.form.get('tipe'),
+            request.form.get('nominal'),
+            request.form.get('kategori'),
+            request.form.get('catatan'),
+        )
+        flash(
+            'Transaksi berhasil diperbarui.' if success else 'Data transaksi tidak valid.',
+            'success' if success else 'danger',
+        )
+        return redirect(url_for('transaksi'))
+
+    return render_template(
+        'transaksi_edit.html',
+        transaksi=transaksi_data,
+        kategori=get_kategori_transaksi(),
+    )
+
+@app.route('/transaksi/<int:transaksi_id>/hapus', methods=['POST'])
+@login_required
+def hapus_transaksi_route(transaksi_id):
+    success = hapus_transaksi(session['user_id'], transaksi_id)
+    flash(
+        'Transaksi berhasil dihapus.' if success else 'Transaksi tidak ditemukan.',
+        'success' if success else 'danger',
+    )
+    return redirect(url_for('transaksi'))
+
+@app.route('/tabungan', methods=['GET', 'POST'])
+@login_required
+def tabungan():
+    user_id = session['user_id']
+    if request.method == 'POST':
+        success, result = buat_tabungan(
+            user_id,
+            request.form.get('nama'),
+            request.form.get('target_nominal'),
+            request.form.get('deadline'),
+            request.form.get('warna'),
+        )
+        if success:
+            flash('Tabungan berhasil dibuat.', 'success')
+        else:
+            flash(result, 'danger')
+        return redirect(url_for('tabungan'))
+
+    return render_template('tabungan.html', tabungan=get_semua_tabungan(user_id))
+
+@app.route('/tabungan/<int:tabungan_id>')
+@login_required
+def detail_tabungan(tabungan_id):
+    tabungan_data, mutasi = get_detail_tabungan(session['user_id'], tabungan_id)
+    if not tabungan_data:
+        flash('Tabungan tidak ditemukan.', 'danger')
+        return redirect(url_for('tabungan'))
+    return render_template('tabungan_detail.html', tabungan=tabungan_data, mutasi=mutasi)
+
+@app.route('/tabungan/<int:tabungan_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_tabungan_route(tabungan_id):
+    user_id = session['user_id']
+    tabungan_data, _ = get_detail_tabungan(user_id, tabungan_id)
+    if not tabungan_data:
+        flash('Tabungan tidak ditemukan.', 'danger')
+        return redirect(url_for('tabungan'))
+
+    if request.method == 'POST':
+        success, message = edit_target_tabungan(
+            user_id,
+            tabungan_id,
+            request.form.get('nama'),
+            request.form.get('target_nominal'),
+            request.form.get('deadline'),
+        )
+        flash(message, 'success' if success else 'danger')
+        return redirect(url_for('detail_tabungan', tabungan_id=tabungan_id))
+
+    return render_template('tabungan_edit.html', tabungan=tabungan_data)
+
+@app.route('/tabungan/<int:tabungan_id>/hapus', methods=['POST'])
+@login_required
+def hapus_tabungan_route(tabungan_id):
+    success, message = hapus_tabungan(session['user_id'], tabungan_id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('tabungan'))
+
+@app.route('/tabungan/<int:tabungan_id>/mutasi', methods=['POST'])
+@login_required
+def mutasi_tabungan(tabungan_id):
+    success, message = simpan_mutasi_tabungan(
+        session['user_id'],
+        tabungan_id,
+        request.form.get('tipe'),
+        request.form.get('nominal'),
+        request.form.get('catatan'),
+    )
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('detail_tabungan', tabungan_id=tabungan_id))
 
 @app.route('/scan')
 @login_required

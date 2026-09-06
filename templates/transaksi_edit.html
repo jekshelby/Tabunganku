@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="detail-topbar">
+    <a href="{{ url_for('transaksi') }}" class="back-link"><i class="bi bi-arrow-left"></i> Transaksi</a>
+    <span class="eyebrow">Edit transaksi</span>
+</div>
+
+<div class="form-card">
+    <div class="section-heading">
+        <div>
+            <h3>Perbaiki data</h3>
+            <p>Tanggal transaksi tetap {{ transaksi.tanggal }}.</p>
+        </div>
+        <i class="bi bi-pencil-square"></i>
+    </div>
+    <form method="POST">
+        <div class="form-group">
+            <label for="tipe">Jenis</label>
+            <select id="tipe" name="tipe" required>
+                <option value="Pemasukan" {% if transaksi.tipe|lower == 'pemasukan' %}selected{% endif %}>Pemasukan</option>
+                <option value="Pengeluaran" {% if transaksi.tipe|lower == 'pengeluaran' %}selected{% endif %}>Pengeluaran</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="nominal">Nominal (Rp)</label>
+            <input type="number" id="nominal" name="nominal" min="1" step="0.01" value="{{ transaksi.nominal }}" required>
+        </div>
+        <div class="form-group">
+            <label for="kategori">Kategori</label>
+            <select id="kategori" name="kategori" required></select>
+        </div>
+        <div class="form-group">
+            <label for="catatan">Catatan</label>
+            <input type="text" id="catatan" name="catatan" maxlength="200" value="{{ transaksi.catatan or '' }}" placeholder="Catatan (opsional)">
+        </div>
+        <button type="submit" class="btn-submit"><i class="bi bi-check-lg"></i> Simpan Perubahan</button>
+    </form>
+</div>
+
+<script>
+    const kategoriData = {{ kategori|tojson }};
+    const kategoriAwal = {{ transaksi.kategori|tojson }};
+    const tipeInput = document.getElementById('tipe');
+    const kategoriInput = document.getElementById('kategori');
+
+    function renderKategori() {
+        const key = tipeInput.value.toLowerCase();
+        kategoriInput.innerHTML = '';
+        (kategoriData[key] || []).forEach((kategori) => {
+            const option = document.createElement('option');
+            option.value = kategori;
+            option.textContent = kategori;
+            option.selected = kategori === kategoriAwal;
+            kategoriInput.appendChild(option);
+        });
+    }
+
+    tipeInput.addEventListener('change', renderKategori);
+    renderKategori();
+</script>
+{% endblock %}
