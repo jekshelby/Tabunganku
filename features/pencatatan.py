@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from db import get_db_connection
 
@@ -8,6 +8,7 @@ def _parse_nominal(value):
         nominal = Decimal(str(value).strip())
     except (InvalidOperation, AttributeError):
         return None
+    nominal = nominal.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
     return nominal if nominal > 0 else None
 
 def get_kategori_transaksi():
@@ -68,7 +69,7 @@ def get_transaksi(user_id, transaksi_id):
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, tanggal, tipe, nominal, kategori, catatan
+                SELECT id, tanggal, tipe, nominal, kategori, catatan, tabungan_id
                 FROM transaksi
                 WHERE id = %s AND user_id = %s
                 """,
@@ -89,6 +90,13 @@ def edit_transaksi(user_id, transaksi_id, tipe, nominal, kategori, catatan=''):
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT tabungan_id FROM transaksi WHERE id = %s AND user_id = %s',
+                (transaksi_id, user_id),
+            )
+            existing = cursor.fetchone()
+            if not existing or existing['tabungan_id'] is not None:
+                return False
             cursor.execute(
                 """
                 UPDATE transaksi
@@ -112,6 +120,13 @@ def hapus_transaksi(user_id, transaksi_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT tabungan_id FROM transaksi WHERE id = %s AND user_id = %s',
+                (transaksi_id, user_id),
+            )
+            existing = cursor.fetchone()
+            if not existing or existing['tabungan_id'] is not None:
+                return False
             cursor.execute(
                 'DELETE FROM transaksi WHERE id = %s AND user_id = %s',
                 (transaksi_id, user_id),

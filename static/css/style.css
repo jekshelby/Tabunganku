@@ -390,6 +390,11 @@ body {
     color: var(--expense-color);
 }
 
+.transaction-source {
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+}
+
 /* ==========================================================================
    7. FORM COMPONENT & TYPE TOGGLE SWITCH
    ========================================================================== */

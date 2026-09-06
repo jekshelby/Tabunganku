@@ -175,6 +175,9 @@ def edit_transaksi_route(transaksi_id):
     if not transaksi_data:
         flash('Transaksi tidak ditemukan.', 'danger')
         return redirect(url_for('transaksi'))
+    if transaksi_data['tabungan_id'] is not None:
+        flash('Transaksi tabungan dikelola dari menu Tabungan.', 'danger')
+        return redirect(url_for('transaksi'))
 
     if request.method == 'POST':
         success = edit_transaksi(

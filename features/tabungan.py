@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from db import get_db_connection
 
@@ -8,6 +8,7 @@ def _parse_nominal(value):
         nominal = Decimal(str(value).strip())
     except (InvalidOperation, AttributeError):
         return None
+    nominal = nominal.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
     return nominal if nominal > 0 else None
 
 
@@ -124,15 +125,39 @@ def hapus_tabungan(user_id, tabungan_id):
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT EXISTS(
-                    SELECT 1 FROM transaksi_tabungan
-                    WHERE tabungan_id = %s AND user_id = %s
-                ) AS has_mutasi
+                SELECT id, nama,
+                    COALESCE((
+                        SELECT SUM(
+                            CASE WHEN tipe = 'setor' THEN nominal ELSE -nominal END
+                        )
+                        FROM transaksi_tabungan
+                        WHERE tabungan_id = tabungan.id AND user_id = %s
+                    ), 0) AS saldo
+                FROM tabungan
+                WHERE id = %s AND user_id = %s
+                FOR UPDATE
                 """,
-                (tabungan_id, user_id),
+                (user_id, tabungan_id, user_id),
             )
-            if cursor.fetchone()['has_mutasi']:
-                return False, 'Tabungan yang sudah memiliki riwayat tidak dapat dihapus.'
+            tabungan = cursor.fetchone()
+            if not tabungan:
+                return False, 'Tabungan tidak ditemukan.'
+
+            if tabungan['saldo'] > 0:
+                kategori = f"Pengembalian - {tabungan['nama']}"[:50]
+                cursor.execute(
+                    """
+                    INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan, tabungan_id)
+                    VALUES (%s, 'Pemasukan', %s, %s, %s, %s)
+                    """,
+                    (
+                        user_id,
+                        tabungan['saldo'],
+                        kategori,
+                        'Pengembalian saldo saat tabungan dihapus',
+                        tabungan_id,
+                    ),
+                )
 
             cursor.execute(
                 'DELETE FROM tabungan WHERE id = %s AND user_id = %s',
@@ -140,7 +165,7 @@ def hapus_tabungan(user_id, tabungan_id):
             )
             deleted = cursor.rowcount == 1
         conn.commit()
-        return (True, 'Tabungan berhasil dihapus.') if deleted else (False, 'Tabungan tidak ditemukan.')
+        return (True, 'Tabungan dihapus dan saldonya dikembalikan ke saldo utama.') if deleted else (False, 'Tabungan tidak ditemukan.')
     except Exception as error:
         conn.rollback()
         print(f'Error hapus tabungan: {error}')
@@ -206,7 +231,7 @@ def simpan_mutasi_tabungan(user_id, tabungan_id, tipe, nominal, catatan=''):
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, target_nominal, status,
+                SELECT id, nama, target_nominal, status,
                     COALESCE((
                         SELECT SUM(
                             CASE
@@ -236,8 +261,22 @@ def simpan_mutasi_tabungan(user_id, tabungan_id, tipe, nominal, catatan=''):
                 INSERT INTO transaksi_tabungan
                     (tabungan_id, user_id, tipe, nominal, catatan)
                 VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
                 """,
                 (tabungan_id, user_id, tipe, nominal, (catatan or '').strip() or None),
+            )
+            mutation_id = cursor.fetchone()['id']
+
+            kategori = f"Tabungan - {tabungan['nama']}"[:50]
+            transaksi_tipe = 'Pengeluaran' if tipe == 'setor' else 'Pemasukan'
+            transaksi_catatan = (catatan or '').strip() or f"{'Setor ke' if tipe == 'setor' else 'Tarik dari'} tabungan {tabungan['nama']}"
+            cursor.execute(
+                """
+                INSERT INTO transaksi
+                    (user_id, tipe, nominal, kategori, catatan, tabungan_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (user_id, transaksi_tipe, nominal, kategori, transaksi_catatan, tabungan_id),
             )
 
             saldo_baru = tabungan['saldo'] + (nominal if tipe == 'setor' else -nominal)

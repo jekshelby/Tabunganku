@@ -27,7 +27,7 @@ def get_ringkasan_keuangan(user_id):
 
         # 5 Transaksi Terakhir
         cursor.execute("""
-            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, created_at
+            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, tabungan_id, created_at
             FROM transaksi 
             WHERE user_id = %s 
             ORDER BY tanggal DESC, created_at DESC 
@@ -63,7 +63,7 @@ def get_semua_riwayat(user_id):
 
     try:
         cursor.execute("""
-            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, created_at
+            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, tabungan_id, created_at
             FROM transaksi 
             WHERE user_id = %s 
             ORDER BY tanggal DESC, created_at DESC
