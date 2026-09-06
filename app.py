@@ -221,6 +221,7 @@ def tabungan():
             request.form.get('target_nominal'),
             request.form.get('deadline'),
             request.form.get('warna'),
+            request.form.get('mode', 'target'),
         )
         if success:
             flash('Tabungan berhasil dibuat.', 'success')
@@ -255,6 +256,7 @@ def edit_tabungan_route(tabungan_id):
             request.form.get('nama'),
             request.form.get('target_nominal'),
             request.form.get('deadline'),
+            request.form.get('mode', 'target'),
         )
         flash(message, 'success' if success else 'danger')
         return redirect(url_for('detail_tabungan', tabungan_id=tabungan_id))

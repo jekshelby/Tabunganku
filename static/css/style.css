@@ -900,6 +900,34 @@ body {
    ========================================================================== */
 .report-filter-card { margin-bottom: 14px; }
 
+.report-insight {
+    align-items: flex-start;
+    background: #fffaf0;
+    border: 1px solid #f1dfb5;
+    border-radius: 14px;
+    display: flex;
+    gap: 11px;
+    margin-bottom: 14px;
+    padding: 13px;
+}
+
+.report-insight-icon {
+    align-items: center;
+    background: #f5c451;
+    border-radius: 10px;
+    color: #5c4300;
+    display: flex;
+    flex: 0 0 32px;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
+}
+
+.report-insight div:last-child { display: flex; flex-direction: column; min-width: 0; }
+.report-insight span { color: #92752e; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+.report-insight strong { color: var(--text-primary); font-size: 0.9rem; margin-top: 3px; }
+.report-insight p { color: #6f6245; font-size: 0.78rem; line-height: 1.4; margin-top: 4px; }
+
 .report-filter { display: flex; flex-direction: column; gap: 10px; }
 
 .report-mode {

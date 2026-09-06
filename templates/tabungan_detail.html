@@ -25,13 +25,17 @@
 {% set progress = (tabungan.saldo / tabungan.target_nominal * 100) if tabungan.target_nominal else 0 %}
 {% if progress > 100 %}{% set progress = 100 %}{% endif %}
 <div class="savings-hero" style="--savings-color: {{ tabungan.warna }}">
-    <div class="savings-symbol large"><i class="bi bi-bullseye"></i></div>
+    <div class="savings-symbol large"><i class="bi {% if tabungan.target_nominal %}bi-bullseye{% else %}bi-wallet2{% endif %}"></i></div>
     <p class="eyebrow">Target tabungan</p>
     <h1>{{ tabungan.nama }}</h1>
     <div class="detail-balance">Rp {{ "{:,.0f}".format(tabungan.saldo).replace(',', '.') }}</div>
+    {% if tabungan.target_nominal %}
     <p class="detail-target">dari target Rp {{ "{:,.0f}".format(tabungan.target_nominal).replace(',', '.') }}</p>
     <div class="progress-track detail-progress"><div class="progress-fill" style="width: {{ progress }}%; background-color: {{ tabungan.warna }}"></div></div>
     <div class="savings-meta"><span>{{ "{:,.0f}".format(progress) }}% tercapai</span>{% if tabungan.deadline %}<span>Deadline {{ tabungan.deadline }}</span>{% endif %}</div>
+    {% else %}
+    <p class="detail-target">Tabungan umum tanpa target dan deadline</p>
+    {% endif %}
 </div>
 
 <div class="mutation-grid">

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 
 from db import get_db_connection
 
@@ -14,6 +15,44 @@ def _period_range(period_type, period_value):
     else:
         next_period = date(period.year, period.month + 1, 1)
     return date(period.year, period.month, 1), next_period
+
+
+def _buat_insight(pemasukan, pengeluaran, setor, kategori, target_tabungan):
+    if not pemasukan and not pengeluaran and not setor:
+        return {
+            'judul': 'Belum ada aktivitas',
+            'teks': 'Belum cukup data untuk membaca pola keuangan pada periode ini.',
+            'ikon': 'bi-stars',
+        }
+
+    if pemasukan > pengeluaran:
+        judul = 'Arus keuangan positif'
+        teks = f'Pemasukan lebih besar dari pengeluaran sebesar Rp {pemasukan - pengeluaran:,.0f}.'.replace(',', '.')
+    elif pengeluaran > pemasukan:
+        judul = 'Perhatikan pengeluaran'
+        teks = f'Pengeluaran lebih besar dari pemasukan sebesar Rp {pengeluaran - pemasukan:,.0f}.'.replace(',', '.')
+    else:
+        judul = 'Arus keuangan seimbang'
+        teks = 'Pemasukan dan pengeluaran berada pada jumlah yang sama.'
+
+    kategori_pengeluaran = next((item for item in kategori if item['tipe'] == 'pengeluaran'), None)
+    if kategori_pengeluaran:
+        teks += f" Pengeluaran terbesar berasal dari {kategori_pengeluaran['kategori']}."
+
+    if setor:
+        teks += f' Kamu menyisihkan Rp {setor:,.0f} ke tabungan.'.replace(',', '.')
+
+    hampir_tercapai = next(
+        (
+            item for item in target_tabungan
+            if item['target_nominal'] and item['saldo'] >= item['target_nominal'] * Decimal('0.8')
+        ),
+        None,
+    )
+    if hampir_tercapai:
+        teks += f" Target {hampir_tercapai['nama']} sudah mendekati tujuan."
+
+    return {'judul': judul, 'teks': teks, 'ikon': 'bi-lightbulb-fill'}
 
 
 def get_laporan_keuangan(user_id, period_type='month', period_value=None):
@@ -93,6 +132,7 @@ def get_laporan_keuangan(user_id, period_type='month', period_value=None):
         pengeluaran = float(transaksi['pengeluaran'])
         setor = float(tabungan['setor'])
         tarik = float(tabungan['tarik'])
+        insight = _buat_insight(pemasukan, pengeluaran, setor, kategori, target_tabungan)
         return {
             'period_type': period_type,
             'period_value': period_value,
@@ -108,6 +148,7 @@ def get_laporan_keuangan(user_id, period_type='month', period_value=None):
             'jumlah_mutasi': tabungan['jumlah_mutasi'],
             'kategori': kategori,
             'target_tabungan': target_tabungan,
+            'insight': insight,
         }
     finally:
         conn.close()

@@ -9,19 +9,26 @@
 <div class="form-card">
     <div class="section-heading">
         <div>
-            <h3>Ubah target tabungan</h3>
+            <h3>Ubah tabungan</h3>
             <p>Saldo yang sudah terkumpul tetap aman.</p>
         </div>
         <i class="bi bi-sliders"></i>
     </div>
     <form method="POST">
         <div class="form-group">
+            <label for="mode">Jenis tabungan</label>
+            <select id="mode" name="mode" onchange="ubahModeEdit()">
+                <option value="target" {% if tabungan.target_nominal %}selected{% endif %}>Target & deadline</option>
+                <option value="umum" {% if not tabungan.target_nominal %}selected{% endif %}>Tabungan umum</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label for="nama">Nama tabungan</label>
             <input type="text" id="nama" name="nama" maxlength="100" value="{{ tabungan.nama }}" required>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="targetField">
             <label for="target_nominal">Target nominal (Rp)</label>
-            <input type="number" id="target_nominal" name="target_nominal" min="1" step="1" value="{{ "{:,.0f}".format(tabungan.target_nominal).replace(',', '') }}" required>
+            <input type="number" id="target_nominal" name="target_nominal" min="1" step="1" value="{% if tabungan.target_nominal %}{{ "{:,.0f}".format(tabungan.target_nominal).replace(',', '') }}{% endif %}" {% if tabungan.target_nominal %}required{% endif %}>
         </div>
         <div class="form-group">
             <label for="deadline">Deadline</label>
@@ -30,4 +37,14 @@
         <button type="submit" class="btn-submit"><i class="bi bi-check-lg"></i> Simpan Target</button>
     </form>
 </div>
+<script>
+    function ubahModeEdit() {
+        const memakaiTarget = document.getElementById('mode').value === 'target';
+        document.getElementById('targetField').style.display = memakaiTarget ? 'block' : 'none';
+        document.getElementById('target_nominal').required = memakaiTarget;
+        document.getElementById('deadline').required = memakaiTarget;
+        if (!memakaiTarget) document.getElementById('target_nominal').value = '';
+    }
+    ubahModeEdit();
+</script>
 {% endblock %}

@@ -9,6 +9,11 @@
     <i class="bi bi-bar-chart-line-fill page-heading-icon"></i>
 </div>
 
+<div class="report-insight">
+    <div class="report-insight-icon"><i class="bi {{ report.insight.ikon }}"></i></div>
+    <div><span>Insight keuangan</span><strong>{{ report.insight.judul }}</strong><p>{{ report.insight.teks }}</p></div>
+</div>
+
 <div class="form-card report-filter-card">
     <form method="GET" action="{{ url_for('report') }}" class="report-filter">
         <div class="report-mode">
@@ -50,7 +55,7 @@
     <div class="section-heading"><div><h3>Posisi tabungan</h3><p>Saldo target saat ini, termasuk semua riwayat.</p></div><i class="bi bi-piggy-bank-fill"></i></div>
     <div class="report-list">
         {% for item in report.target_tabungan %}
-        <div class="report-row"><div><strong>{{ item.nama }}</strong><span>{{ item.status|capitalize }} · Target Rp {{ "{:,.0f}".format(item.target_nominal).replace(',', '.') }}</span></div><strong>Rp {{ "{:,.0f}".format(item.saldo).replace(',', '.') }}</strong></div>
+        <div class="report-row"><div><strong>{{ item.nama }}</strong><span>{{ item.status|capitalize }} · {% if item.target_nominal %}Target Rp {{ "{:,.0f}".format(item.target_nominal).replace(',', '.') }}{% else %}Tabungan umum{% endif %}</span></div><strong>Rp {{ "{:,.0f}".format(item.saldo).replace(',', '.') }}</strong></div>
         {% else %}<div class="empty-state compact"><i class="bi bi-piggy-bank"></i><p>Belum ada target tabungan.</p></div>{% endfor %}
     </div>
 </div>

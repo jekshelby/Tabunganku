@@ -48,11 +48,15 @@ def get_semua_tabungan(user_id):
         conn.close()
 
 
-def buat_tabungan(user_id, nama, target_nominal, deadline=None, warna='#1c1c1e'):
+def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1c1e', mode='target'):
     nama = (nama or '').strip()
-    target = _parse_nominal(target_nominal)
-    if not nama or len(nama) > 100 or not target:
-        return False, 'Nama dan target tabungan wajib diisi dengan benar.'
+    target = _parse_nominal(target_nominal) if mode == 'target' else None
+    if not nama or len(nama) > 100:
+        return False, 'Nama tabungan wajib diisi dengan benar.'
+    if mode == 'target' and not target:
+        return False, 'Target nominal wajib diisi dengan benar.'
+    if mode == 'target' and not deadline:
+        return False, 'Deadline wajib diisi untuk tabungan bertarget.'
 
     conn = get_db_connection()
     try:
@@ -76,11 +80,15 @@ def buat_tabungan(user_id, nama, target_nominal, deadline=None, warna='#1c1c1e')
         conn.close()
 
 
-def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal, deadline=None):
+def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadline=None, mode='target'):
     nama = (nama or '').strip()
-    target = _parse_nominal(target_nominal)
-    if not nama or len(nama) > 100 or not target:
-        return False, 'Nama dan target tabungan wajib diisi dengan benar.'
+    target = _parse_nominal(target_nominal) if mode == 'target' else None
+    if not nama or len(nama) > 100:
+        return False, 'Nama tabungan wajib diisi dengan benar.'
+    if mode == 'target' and not target:
+        return False, 'Target nominal wajib diisi dengan benar.'
+    if mode == 'target' and not deadline:
+        return False, 'Deadline wajib diisi untuk tabungan bertarget.'
 
     conn = get_db_connection()
     try:
@@ -102,11 +110,11 @@ def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal, deadline=No
                 SET nama = %s,
                     target_nominal = %s,
                     deadline = %s,
-                    status = CASE WHEN %s >= %s THEN 'tercapai' ELSE 'aktif' END,
+                    status = CASE WHEN %s IS NOT NULL AND %s >= %s THEN 'tercapai' ELSE 'aktif' END,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s AND user_id = %s
                 """,
-                (nama, target, deadline or None, saldo, target, tabungan_id, user_id),
+                (nama, target, deadline or None, target, saldo, target, tabungan_id, user_id),
             )
             updated = cursor.rowcount == 1
         conn.commit()
@@ -280,7 +288,12 @@ def simpan_mutasi_tabungan(user_id, tabungan_id, tipe, nominal, catatan=''):
             )
 
             saldo_baru = tabungan['saldo'] + (nominal if tipe == 'setor' else -nominal)
-            status = 'tercapai' if saldo_baru >= tabungan['target_nominal'] else 'aktif'
+            status = (
+                'tercapai'
+                if tabungan['target_nominal'] is not None
+                and saldo_baru >= tabungan['target_nominal']
+                else 'aktif'
+            )
             cursor.execute(
                 "UPDATE tabungan SET status = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
                 (status, tabungan_id),
