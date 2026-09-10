@@ -19,6 +19,8 @@ from features.auth import (
     update_user_profile,
 )
 from features.report import get_laporan_keuangan
+from features.dompet import buat_dompet, get_dompet_options, get_semua_dompet, hapus_dompet
+from features.tagihan import bayar_tagihan, buat_tagihan, get_semua_tagihan, hapus_tagihan
 from features.tabungan import (
     buat_tabungan,
     edit_target_tabungan,
@@ -111,20 +113,22 @@ def index():
 
     # Simpan maksimal 3 transaksi terbaru untuk index.html
     data_dashboard['riwayat'] = items_flat[:3]
+    data_dashboard['dompet'] = get_semua_dompet(user_id)
 
     return render_template('dashboard.html', data=data_dashboard)
 
 @app.route('/tambah', methods=['GET', 'POST'])
 @login_required
 def tambah_transaksi():
+    user_id = session['user_id']
     if request.method == 'POST':
-        user_id = session['user_id']
         tipe = request.form.get('tipe')
         nominal = request.form.get('nominal')
         kategori = request.form.get('kategori')
         catatan = request.form.get('catatan')
+        dompet_id = request.form.get('dompet_id') or None
 
-        if simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan):
+        if simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan, dompet_id):
             flash('Transaksi berhasil disimpan.', 'success')
             return redirect(url_for('index'))
 
@@ -132,7 +136,7 @@ def tambah_transaksi():
         return redirect(url_for('tambah_transaksi'))
 
     kategori = get_kategori_transaksi()
-    return render_template('pencatatan.html', kategori=kategori)
+    return render_template('pencatatan.html', kategori=kategori, dompet=get_dompet_options(user_id))
 
 @app.route('/transaksi')
 @login_required
@@ -166,6 +170,56 @@ def akun():
         flash(message, 'success' if success else 'danger')
         return redirect(url_for('akun'))
     return render_template('akun.html', profile=get_user_profile(user_id))
+
+@app.route('/dompet', methods=['POST'])
+@login_required
+def tambah_dompet():
+    success, result = buat_dompet(
+        session['user_id'],
+        request.form.get('nama'),
+        request.form.get('jenis'),
+        request.form.get('warna'),
+    )
+    flash('Dompet berhasil ditambahkan.' if success else result, 'success' if success else 'danger')
+    return redirect(url_for('index'))
+
+@app.route('/dompet/<int:dompet_id>/hapus', methods=['POST'])
+@login_required
+def hapus_dompet_route(dompet_id):
+    success, message = hapus_dompet(session['user_id'], dompet_id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('index'))
+
+@app.route('/tagihan', methods=['GET', 'POST'])
+@login_required
+def tagihan():
+    user_id = session['user_id']
+    if request.method == 'POST':
+        success, result = buat_tagihan(
+            user_id,
+            request.form.get('nama'),
+            request.form.get('nominal'),
+            request.form.get('jatuh_tempo'),
+            request.form.get('kategori'),
+            request.form.get('catatan'),
+        )
+        flash('Tagihan berhasil dibuat.' if success else result, 'success' if success else 'danger')
+        return redirect(url_for('tagihan'))
+    return render_template('tagihan.html', tagihan=get_semua_tagihan(user_id), dompet=get_dompet_options(user_id))
+
+@app.route('/tagihan/<int:tagihan_id>/bayar', methods=['POST'])
+@login_required
+def bayar_tagihan_route(tagihan_id):
+    success, message = bayar_tagihan(session['user_id'], tagihan_id, request.form.get('dompet_id'))
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('tagihan'))
+
+@app.route('/tagihan/<int:tagihan_id>/hapus', methods=['POST'])
+@login_required
+def hapus_tagihan_route(tagihan_id):
+    success, message = hapus_tagihan(session['user_id'], tagihan_id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('tagihan'))
 
 @app.route('/transaksi/<int:transaksi_id>/edit', methods=['GET', 'POST'])
 @login_required

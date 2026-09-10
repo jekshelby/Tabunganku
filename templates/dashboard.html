@@ -38,6 +38,17 @@
     </div>
 </div>
 
+<div class="section-heading wallet-heading"><div><h3>Dompet saya</h3><p>Saldo per dompet</p></div><i class="bi bi-wallet2"></i></div>
+<div class="wallet-grid">
+    {% for wallet in data.dompet %}
+    <div class="wallet-card" data-warna="{{ wallet.warna }}">
+        <div class="wallet-card-top"><i class="bi bi-wallet2"></i><span>{{ wallet.jenis }}</span>{% if not wallet.is_utama %}<form method="POST" action="{{ url_for('hapus_dompet_route', dompet_id=wallet.id) }}" onsubmit="return confirm('Hapus dompet ini?')"><button class="icon-action danger" title="Hapus dompet" aria-label="Hapus dompet"><i class="bi bi-trash3"></i></button></form>{% endif %}</div>
+        <strong>{{ wallet.nama }}</strong><b>Rp {{ "{:,.0f}".format(wallet.saldo).replace(',', '.') }}</b>
+    </div>
+    {% endfor %}
+</div>
+<div class="form-card wallet-create-card"><form method="POST" action="{{ url_for('tambah_dompet') }}"><div class="wallet-form-row"><input name="nama" maxlength="80" placeholder="Nama dompet baru" required><select name="jenis"><option>E-wallet</option><option>Bank</option><option>Cash</option><option>Lainnya</option></select><button class="icon-action" title="Tambah dompet" aria-label="Tambah dompet"><i class="bi bi-plus-lg"></i></button></div><input type="hidden" name="warna" value="#1c1c1e"></form></div>
+
 <!-- Tombol Utama Catat Transaksi -->
 <div style="margin-top: 16px; margin-bottom: 24px;">
     <a href="/tambah" class="btn-catat-utama" style="text-decoration: none;">

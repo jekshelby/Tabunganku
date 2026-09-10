@@ -151,12 +151,20 @@ def hapus_tabungan(user_id, tabungan_id):
             if not tabungan:
                 return False, 'Tabungan tidak ditemukan.'
 
+            cursor.execute(
+                "SELECT id FROM dompet WHERE user_id = %s AND is_utama = TRUE ORDER BY id LIMIT 1",
+                (user_id,),
+            )
+            cash_wallet = cursor.fetchone()
+            if not cash_wallet:
+                return False, 'Cash wallet tidak ditemukan.'
+
             if tabungan['saldo'] > 0:
                 kategori = f"Pengembalian - {tabungan['nama']}"[:50]
                 cursor.execute(
                     """
-                    INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan, tabungan_id)
-                    VALUES (%s, 'Pemasukan', %s, %s, %s, %s)
+                    INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan, tabungan_id, dompet_id)
+                    VALUES (%s, 'Pemasukan', %s, %s, %s, %s, %s)
                     """,
                     (
                         user_id,
@@ -164,6 +172,7 @@ def hapus_tabungan(user_id, tabungan_id):
                         kategori,
                         'Pengembalian saldo saat tabungan dihapus',
                         tabungan_id,
+                        cash_wallet['id'],
                     ),
                 )
 
@@ -265,6 +274,14 @@ def simpan_mutasi_tabungan(user_id, tabungan_id, tipe, nominal, catatan=''):
                 return False, 'Saldo tabungan tidak mencukupi.'
 
             cursor.execute(
+                "SELECT id FROM dompet WHERE user_id = %s AND is_utama = TRUE ORDER BY id LIMIT 1",
+                (user_id,),
+            )
+            cash_wallet = cursor.fetchone()
+            if not cash_wallet:
+                return False, 'Cash wallet tidak ditemukan.'
+
+            cursor.execute(
                 """
                 INSERT INTO transaksi_tabungan
                     (tabungan_id, user_id, tipe, nominal, catatan)
@@ -281,10 +298,10 @@ def simpan_mutasi_tabungan(user_id, tabungan_id, tipe, nominal, catatan=''):
             cursor.execute(
                 """
                 INSERT INTO transaksi
-                    (user_id, tipe, nominal, kategori, catatan, tabungan_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                    (user_id, tipe, nominal, kategori, catatan, tabungan_id, dompet_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, transaksi_tipe, nominal, kategori, transaksi_catatan, tabungan_id),
+                (user_id, transaksi_tipe, nominal, kategori, transaksi_catatan, tabungan_id, cash_wallet['id']),
             )
 
             saldo_baru = tabungan['saldo'] + (nominal if tipe == 'setor' else -nominal)

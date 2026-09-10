@@ -1044,6 +1044,64 @@ body {
 .account-identity span { color: var(--text-secondary); font-size: 0.78rem; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; }
 .account-logout { color: var(--expense-color); display: block; font-size: 0.85rem; font-weight: 700; margin: 18px 4px; text-decoration: none; }
 
+.wallet-heading { margin: 8px 0 10px; }
+.wallet-grid {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.wallet-grid::-webkit-scrollbar { display: none; }
+
+.wallet-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; flex: 0 0 170px; min-width: 0; padding: 13px; }
+.wallet-card[data-warna] { border-top: 3px solid var(--accent-dark); }
+.wallet-card-top { align-items: center; color: var(--text-secondary); display: flex; font-size: 0.72rem; gap: 6px; margin-bottom: 13px; }
+.wallet-card-top > i { color: var(--income-color); font-size: 1rem; }
+.wallet-card-top span { flex: 1; }
+.wallet-card-top .icon-action { height: 24px; width: 24px; }
+.wallet-card strong { color: var(--text-primary); display: block; font-size: 0.82rem; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wallet-card b { color: var(--text-primary); font-size: 0.95rem; }
+.wallet-create-card { margin-bottom: 22px; padding: 10px; }
+.wallet-form-row { display: flex; gap: 7px; }
+.wallet-form-row input, .wallet-form-row select { background: #fafafa; border: 1px solid var(--border-color); border-radius: 9px; color: var(--text-primary); min-width: 0; padding: 9px; }
+.wallet-form-row input { flex: 1; }
+.wallet-form-row select { width: 92px; }
+.wallet-form-row .icon-action { flex: 0 0 34px; }
+
+.scan-entry {
+    align-items: center;
+    background: #f7f7f8;
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    display: flex;
+    justify-content: space-between;
+    margin: -6px 0 16px;
+    padding: 10px 12px;
+}
+
+.scan-entry div { display: flex; flex-direction: column; gap: 3px; }
+.scan-entry strong { color: var(--text-primary); font-size: 0.82rem; }
+.scan-entry span { color: var(--text-secondary); font-size: 0.7rem; }
+.scan-entry .icon-action { background: var(--accent-dark); color: #ffffff; }
+
+.bill-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; }
+.bill-card.paid { opacity: 0.72; }
+.bill-main { align-items: center; display: flex; gap: 10px; }
+.bill-symbol { background: var(--expense-color); flex-basis: 38px; height: 38px; width: 38px; }
+.bill-card.paid .bill-symbol { background: var(--income-color); }
+.bill-copy { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.bill-copy h3 { color: var(--text-primary); font-size: 0.92rem; margin-bottom: 3px; }
+.bill-copy span { color: var(--text-secondary); font-size: 0.7rem; }
+.bill-copy strong { color: var(--expense-color); font-size: 0.95rem; margin-top: 7px; }
+.bill-actions { align-items: center; display: flex; gap: 7px; justify-content: flex-end; margin-top: 12px; }
+.bill-actions form:first-child { display: flex; flex: 1; gap: 7px; }
+.bill-actions select { background: #fafafa; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); flex: 1; min-width: 0; padding: 8px; }
+.bill-actions .mutation-button { padding: 8px 14px; width: auto; }
+
 /* ============================================================================
     11. MEDIA QUERIES
    ========================================================================== */

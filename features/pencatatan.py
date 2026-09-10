@@ -32,7 +32,7 @@ def get_kategori_transaksi():
         ]
     }
 
-def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan=""):
+def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan="", dompet_id=None):
     """Menyimpan data transaksi baru khusus milik user_id tertentu."""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -47,11 +47,19 @@ def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan=""):
         if not nominal:
             return False
 
+        if dompet_id:
+            cursor.execute('SELECT id FROM dompet WHERE id = %s AND user_id = %s', (dompet_id, user_id))
+        else:
+            cursor.execute('SELECT id FROM dompet WHERE user_id = %s AND is_utama = TRUE ORDER BY id LIMIT 1', (user_id,))
+        dompet = cursor.fetchone()
+        if not dompet:
+            return False
+
         query = """
-            INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan, dompet_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (user_id, tipe, nominal, kategori, catatan))
+        cursor.execute(query, (user_id, tipe, nominal, kategori, catatan, dompet['id']))
         conn.commit()
         return True
     except Exception as e:
@@ -69,7 +77,7 @@ def get_transaksi(user_id, transaksi_id):
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, tanggal, tipe, nominal, kategori, catatan, tabungan_id
+                SELECT id, tanggal, tipe, nominal, kategori, catatan, tabungan_id, dompet_id
                 FROM transaksi
                 WHERE id = %s AND user_id = %s
                 """,

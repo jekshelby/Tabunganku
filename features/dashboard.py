@@ -6,6 +6,17 @@ def get_ringkasan_keuangan(user_id):
     cursor = conn.cursor()
 
     try:
+        cursor.execute("""
+            SELECT d.id, d.nama, d.jenis, d.warna, d.is_utama,
+                COALESCE(SUM(CASE WHEN LOWER(t.tipe) = 'pemasukan' THEN t.nominal ELSE -t.nominal END), 0) AS saldo
+            FROM dompet d
+            LEFT JOIN transaksi t ON t.dompet_id = d.id
+            WHERE d.user_id = %s
+            GROUP BY d.id
+            ORDER BY d.is_utama DESC, d.created_at ASC
+        """, (user_id,))
+        dompet = cursor.fetchall()
+
         # Total Pemasukan
         cursor.execute("""
             SELECT COALESCE(SUM(nominal), 0) as total 
@@ -22,8 +33,8 @@ def get_ringkasan_keuangan(user_id):
         """, (user_id,))
         total_pengeluaran = float(cursor.fetchone()['total'])
 
-        # Hitung Saldo Utuh
-        total_saldo = total_pemasukan - total_pengeluaran
+        # Total saldo adalah penjumlahan seluruh saldo dompet.
+        total_saldo = sum(float(wallet['saldo']) for wallet in dompet)
 
         # 5 Transaksi Terakhir
         cursor.execute("""
@@ -41,6 +52,7 @@ def get_ringkasan_keuangan(user_id):
             'total_pemasukan': total_pemasukan,
             'total_pengeluaran': total_pengeluaran,
             'transaksi_terakhir': transaksi_terakhir
+            , 'dompet': dompet
         }
     except Exception as e:
         print(f"Error get_ringkasan_keuangan: {e}")
@@ -50,6 +62,7 @@ def get_ringkasan_keuangan(user_id):
             'total_pemasukan': 0,
             'total_pengeluaran': 0,
             'transaksi_terakhir': []
+            , 'dompet': []
         }
     finally:
         cursor.close()

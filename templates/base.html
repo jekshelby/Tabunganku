@@ -43,7 +43,7 @@
         </main>
 
         <!-- Hide Bottom Nav jika berada di halaman /tambah, /login, atau /register -->
-        {% if request.path not in ['/tambah', '/login', '/register'] %}
+        {% if request.path not in ['/tambah', '/scan', '/login', '/register'] %}
         <nav class="bottom-nav">
             <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
                 <i class="bi bi-house-door-fill nav-icon"></i>
@@ -53,17 +53,17 @@
                 <i class="bi bi-piggy-bank-fill nav-icon"></i>
                 <span>Tabungan</span>
             </a>
-            <a href="/report" class="nav-item {% if request.path.startswith('/report') %}active{% endif %}">
-                <i class="bi bi-bar-chart-line-fill nav-icon"></i>
-                <span>Report</span>
-            </a>
-            <a href="/scan" class="nav-item {% if request.path == '/scan' %}active{% endif %}">
-                <i class="bi bi-qr-code-scan nav-icon"></i>
-                <span>Scan</span>
+            <a href="/tagihan" class="nav-item {% if request.path.startswith('/tagihan') %}active{% endif %}">
+                <i class="bi bi-receipt-cutoff nav-icon"></i>
+                <span>Tagihan</span>
             </a>
             <a href="/transaksi" class="nav-item {% if request.path == '/transaksi' %}active{% endif %}">
                 <i class="bi bi-receipt nav-icon"></i>
                 <span>Transaksi</span>
+            </a>
+            <a href="/report" class="nav-item {% if request.path.startswith('/report') %}active{% endif %}">
+                <i class="bi bi-bar-chart-line-fill nav-icon"></i>
+                <span>Report</span>
             </a>
         </nav>
         {% endif %}

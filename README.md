@@ -81,7 +81,20 @@ Transaksi juga dapat:
 
 Transaksi yang dibuat otomatis oleh sistem tabungan tidak dapat diedit atau dihapus langsung dari menu transaksi. Perubahannya harus dilakukan melalui menu Tabungan agar saldo tetap konsisten.
 
-### 4. Tabungan
+Transaksi manual dapat dikaitkan dengan dompet tertentu, seperti Dompet Utama, rekening bank, atau e-wallet.
+
+### 4. Dompet
+
+Dashboard menampilkan kartu saldo untuk setiap dompet pengguna.
+
+- Dompet Utama dibuat otomatis saat akun dibuat.
+- Pengguna dapat menambahkan dompet Cash, Bank, E-wallet, atau jenis lainnya.
+- Setiap transaksi manual dapat memilih dompet sumber atau tujuan.
+- Saldo setiap dompet dihitung dari transaksi yang terhubung.
+- Dompet Utama tidak dapat dihapus.
+- Dompet yang sudah memiliki transaksi tidak dapat dihapus untuk menjaga riwayat.
+
+### 5. Tabungan
 
 Menu Tabungan memiliki dua jenis tabungan:
 
@@ -133,7 +146,17 @@ Saat tabungan dihapus:
 - Sistem membuat transaksi pemasukan dengan kategori `Pengembalian - Nama Tabungan`.
 - Target tabungan dan riwayat mutasinya dihapus sesuai relasi database.
 
-### 5. Report Keuangan
+### 6. Tagihan
+
+Menu Tagihan digunakan untuk menyimpan dan memantau pembayaran rutin.
+
+- Tambah tagihan dengan nama, nominal, kategori, dan jatuh tempo.
+- Bayar tagihan dari dompet pilihan.
+- Pembayaran otomatis dicatat sebagai transaksi pengeluaran.
+- Tandai tagihan sebagai lunas setelah dibayar.
+- Hapus tagihan yang tidak diperlukan.
+
+### 7. Report Keuangan
 
 Menu Report menyediakan ringkasan berdasarkan periode:
 
@@ -159,7 +182,7 @@ Insight menggunakan aturan lokal berdasarkan data pengguna, tanpa mengirim data 
 - Jumlah uang yang disisihkan ke tabungan.
 - Target tabungan yang hampir tercapai.
 
-### 6. Scan Struk OCR
+### 8. Scan Struk OCR
 
 Menu Scan dapat digunakan untuk membaca nominal dari gambar struk.
 
@@ -178,7 +201,7 @@ Alur OCR:
 
 Fitur kamera membutuhkan izin kamera dari browser. OCR membutuhkan koneksi internet.
 
-### 7. Progressive Web App
+### 9. Progressive Web App
 
 Aplikasi mendukung fitur PWA melalui:
 
@@ -240,6 +263,8 @@ Aplikasi mendukung fitur PWA melalui:
 │   ├── ocr.py               # Ekstraksi nominal struk
 │   ├── pencatatan.py        # Kategori dan operasi transaksi
 │   ├── report.py            # Agregasi laporan dan insight
+│   ├── dompet.py            # Dompet dan saldo per dompet
+│   ├── tagihan.py           # Tagihan dan pembayaran
 │   └── tabungan.py          # Target, saldo, dan mutasi tabungan
 ├── templates/               # Template halaman Jinja2
 └── static/
@@ -299,6 +324,33 @@ Menyimpan mutasi saldo tabungan.
 - `nominal`
 - `tanggal`
 - `catatan`
+- `created_at`
+
+### `dompet`
+
+Menyimpan dompet pengguna dan saldo yang dihitung dari transaksi.
+
+- `id`
+- `user_id`
+- `nama`
+- `jenis`
+- `warna`
+- `is_utama`
+- `created_at`
+
+### `tagihan`
+
+Menyimpan tagihan rutin dan status pembayarannya.
+
+- `id`
+- `user_id`
+- `nama`
+- `kategori`
+- `nominal`
+- `jatuh_tempo`
+- `status`
+- `dompet_id`
+- `paid_at`
 - `created_at`
 
 ## Instalasi Lokal
@@ -373,6 +425,8 @@ http://127.0.0.1:5000
 | `/login` | GET, POST | Login |
 | `/register` | GET, POST | Registrasi |
 | `/akun` | GET, POST | Kustomisasi akun |
+| `/dompet` | POST | Tambah dompet |
+| `/dompet/<id>/hapus` | POST | Hapus dompet |
 | `/tambah` | GET, POST | Tambah transaksi |
 | `/transaksi` | GET | Daftar transaksi |
 | `/transaksi/<id>/edit` | GET, POST | Edit transaksi |
@@ -382,6 +436,9 @@ http://127.0.0.1:5000
 | `/tabungan/<id>/edit` | GET, POST | Edit tabungan |
 | `/tabungan/<id>/hapus` | POST | Hapus tabungan |
 | `/tabungan/<id>/mutasi` | POST | Setor atau tarik tabungan |
+| `/tagihan` | GET, POST | Daftar dan tambah tagihan |
+| `/tagihan/<id>/bayar` | POST | Bayar tagihan dari dompet |
+| `/tagihan/<id>/hapus` | POST | Hapus tagihan |
 | `/report` | GET | Report bulanan/tahunan |
 | `/scan` | GET | Halaman scan struk |
 | `/api/scan-ocr` | POST | Endpoint OCR struk |

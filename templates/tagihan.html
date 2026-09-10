@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Pembayaran rutin</p><h2>Tagihan</h2></div><i class="bi bi-receipt-cutoff page-heading-icon"></i></div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="auth-alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<div class="form-card savings-create-card">
+  <div class="section-heading"><div><h3>Tambah tagihan</h3><p>Simpan tagihan rutin agar tidak terlupa.</p></div><i class="bi bi-plus-circle-fill"></i></div>
+  <form method="POST">
+    <div class="form-group"><label for="nama">Nama tagihan</label><input id="nama" name="nama" maxlength="100" placeholder="Contoh: Listrik" required></div>
+    <div class="savings-form-grid"><div class="form-group"><label for="nominal">Nominal (Rp)</label><input id="nominal" name="nominal" type="number" min="1" step="1" required></div><div class="form-group"><label for="jatuh_tempo">Jatuh tempo</label><input id="jatuh_tempo" name="jatuh_tempo" type="date"></div></div>
+    <div class="form-group"><label for="kategori">Kategori</label><select id="kategori" name="kategori"><option>Tagihan & Utilitas</option><option>Internet</option><option>Sewa</option><option>Langganan</option><option>Lainnya</option></select></div>
+    <div class="form-group"><label for="catatan">Catatan</label><input id="catatan" name="catatan" maxlength="200" placeholder="Opsional"></div>
+    <button class="btn-submit" type="submit"><i class="bi bi-plus-lg"></i> Simpan Tagihan</button>
+  </form>
+</div>
+<div class="section-heading savings-list-heading"><div><h3>Daftar tagihan</h3><p>{{ tagihan|length }} tagihan tersimpan</p></div></div>
+<div class="savings-list">
+{% for item in tagihan %}
+<div class="bill-card {% if item.status == 'lunas' %}paid{% endif %}">
+  <div class="bill-main"><div class="savings-symbol bill-symbol"><i class="bi {% if item.status == 'lunas' %}bi-check-lg{% else %}bi-receipt{% endif %}"></i></div><div class="bill-copy"><h3>{{ item.nama }}</h3><span>{{ item.kategori }}{% if item.jatuh_tempo %} · Jatuh tempo {{ item.jatuh_tempo }}{% endif %}</span><strong>Rp {{ "{:,.0f}".format(item.nominal).replace(',', '.') }}</strong></div></div>
+  <div class="bill-actions">{% if item.status == 'belum_lunas' %}<form method="POST" action="{{ url_for('bayar_tagihan_route', tagihan_id=item.id) }}"><select name="dompet_id" required><option value="">Pilih dompet</option>{% for wallet in dompet %}<option value="{{ wallet.id }}">{{ wallet.nama }}</option>{% endfor %}</select><button class="mutation-button expense-button" type="submit">Bayar</button></form>{% else %}<span class="status-pill tercapai">Lunas</span>{% endif %}<form method="POST" action="{{ url_for('hapus_tagihan_route', tagihan_id=item.id) }}" onsubmit="return confirm('Hapus tagihan ini?')"><button class="icon-action danger" title="Hapus tagihan" aria-label="Hapus tagihan"><i class="bi bi-trash3"></i></button></form></div>
+</div>
+{% else %}<div class="empty-state"><i class="bi bi-receipt"></i><h3>Belum ada tagihan</h3><p>Tambahkan tagihan rutin pertama Anda.</p></div>{% endfor %}
+</div>
+{% endblock %}

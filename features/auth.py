@@ -12,6 +12,13 @@ def register_user(nama, email, password):
             (nama, email, hashed_pw)
         )
         user_id = cursor.fetchone()['id']
+        cursor.execute(
+            """
+            INSERT INTO dompet (user_id, nama, jenis, is_utama)
+            VALUES (%s, 'Cash', 'Cash', TRUE)
+            """,
+            (user_id,),
+        )
         conn.commit()
         return True, user_id
     except Exception as e:
