@@ -86,13 +86,12 @@ def get_semua_tabungan(user_id):
 
 def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1c1e', mode='target', product_url=''):
     nama = (nama or '').strip()
-    target = _parse_nominal(target_nominal) if mode == 'target' else None
+    target_input = (target_nominal or '').strip()
+    target = _parse_nominal(target_input) if target_input else None
     if not nama or len(nama) > 100:
         return False, 'Nama tabungan wajib diisi dengan benar.'
-    if mode == 'target' and not target:
+    if target_input and not target:
         return False, 'Target nominal wajib diisi dengan benar.'
-    if mode == 'target' and not deadline:
-        return False, 'Deadline wajib diisi untuk tabungan bertarget.'
     if (product_url or '').strip() and not normalisasi_url(product_url):
         return False, 'Tautan produk tidak valid. Gunakan tautan http atau https.'
 
@@ -136,13 +135,12 @@ def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1
 
 def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadline=None, mode='target', product_url=''):
     nama = (nama or '').strip()
-    target = _parse_nominal(target_nominal) if mode == 'target' else None
+    target_input = (target_nominal or '').strip()
+    target = _parse_nominal(target_input) if target_input else None
     if not nama or len(nama) > 100:
         return False, 'Nama tabungan wajib diisi dengan benar.'
-    if mode == 'target' and not target:
+    if target_input and not target:
         return False, 'Target nominal wajib diisi dengan benar.'
-    if mode == 'target' and not deadline:
-        return False, 'Deadline wajib diisi untuk tabungan bertarget.'
     if (product_url or '').strip() and not normalisasi_url(product_url):
         return False, 'Tautan produk tidak valid. Gunakan tautan http atau https.'
 
@@ -194,7 +192,7 @@ def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadli
             )
             updated = cursor.rowcount == 1
         conn.commit()
-        return (True, 'Target tabungan berhasil diperbarui.') if updated else (False, 'Tabungan tidak ditemukan.')
+        return (True, 'Tabungan berhasil diperbarui.') if updated else (False, 'Tabungan tidak ditemukan.')
     except Exception as error:
         conn.rollback()
         print(f'Error edit target tabungan: {error}')
