@@ -24,9 +24,25 @@
 
 {% set progress = (tabungan.saldo / tabungan.target_nominal * 100) if tabungan.target_nominal else 0 %}
 {% if progress > 100 %}{% set progress = 100 %}{% endif %}
+
+{% if tabungan.product_url %}
+<a class="product-card" href="{{ tabungan.product_url }}" target="_blank" rel="noopener noreferrer">
+    {% if tabungan.product_image %}
+    <img src="{{ tabungan.product_image }}" alt="{{ tabungan.product_title or tabungan.nama }}" onerror="this.outerHTML='<div class=\\'product-card-fallback\\'><i class=\\'bi bi-box-seam\\'></i></div>'">
+    {% else %}
+    <div class="product-card-fallback"><i class="bi bi-box-seam"></i></div>
+    {% endif %}
+    <div class="product-card-copy">
+        <span>{{ tabungan.product_site or 'Tautan produk' }}</span>
+        <strong>{{ tabungan.product_title or tabungan.nama }}</strong>
+        <em>Lihat barang di toko <i class="bi bi-box-arrow-up-right"></i></em>
+    </div>
+</a>
+{% endif %}
+
 <div class="savings-hero" style="--savings-color: {{ tabungan.warna }}">
     <div class="savings-symbol large"><i class="bi {% if tabungan.target_nominal %}bi-bullseye{% else %}bi-wallet2{% endif %}"></i></div>
-    <p class="eyebrow">Target tabungan</p>
+    <p class="eyebrow">{% if tabungan.target_nominal %}Target tabungan{% else %}Tabungan umum{% endif %}</p>
     <h1>{{ tabungan.nama }}</h1>
     <div class="detail-balance">Rp {{ "{:,.0f}".format(tabungan.saldo).replace(',', '.') }}</div>
     {% if tabungan.target_nominal %}

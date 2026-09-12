@@ -29,6 +29,7 @@ from features.tabungan import (
     hapus_tabungan,
     simpan_mutasi_tabungan,
 )
+from features.tautan import ambil_preview_tautan
 
 app = Flask(__name__)
 
@@ -267,9 +268,14 @@ def hapus_transaksi_route(transaksi_id):
     )
     return redirect(url_for('transaksi'))
 
-@app.route('/tabungan', methods=['GET', 'POST'])
+@app.route('/tabungan', methods=['GET'])
 @login_required
 def tabungan():
+    return render_template('tabungan.html', tabungan=get_semua_tabungan(session['user_id']))
+
+@app.route('/tabungan/baru', methods=['GET', 'POST'])
+@login_required
+def tambah_tabungan():
     user_id = session['user_id']
     if request.method == 'POST':
         success, result = buat_tabungan(
@@ -279,14 +285,22 @@ def tabungan():
             request.form.get('deadline'),
             request.form.get('warna'),
             request.form.get('mode', 'target'),
+            request.form.get('product_url'),
         )
         if success:
             flash('Tabungan berhasil dibuat.', 'success')
-        else:
-            flash(result, 'danger')
-        return redirect(url_for('tabungan'))
+            return redirect(url_for('detail_tabungan', tabungan_id=result))
+        flash(result, 'danger')
+        return redirect(url_for('tambah_tabungan'))
+    return render_template('tabungan_create.html')
 
-    return render_template('tabungan.html', tabungan=get_semua_tabungan(user_id))
+@app.route('/api/preview-tautan')
+@login_required
+def api_preview_tautan():
+    preview = ambil_preview_tautan(request.args.get('url', ''))
+    if not preview:
+        return jsonify({'success': False, 'message': 'Tautan tidak valid.'}), 400
+    return jsonify({'success': True, **preview})
 
 @app.route('/tabungan/<int:tabungan_id>')
 @login_required
@@ -314,6 +328,7 @@ def edit_tabungan_route(tabungan_id):
             request.form.get('target_nominal'),
             request.form.get('deadline'),
             request.form.get('mode', 'target'),
+            request.form.get('product_url'),
         )
         flash(message, 'success' if success else 'danger')
         return redirect(url_for('detail_tabungan', tabungan_id=tabungan_id))

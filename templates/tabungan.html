@@ -19,39 +19,11 @@
 {% endif %}
 {% endwith %}
 
-<div class="form-card savings-create-card">
-    <div class="section-heading">
-        <div>
-            <h3>Tambah tabungan</h3>
-            <p>Pilih tabungan dengan target atau tabungan umum.</p>
-        </div>
-        <i class="bi bi-plus-circle-fill"></i>
-    </div>
-    <form action="{{ url_for('tabungan') }}" method="POST">
-        <div class="form-group">
-            <label for="mode">Jenis tabungan</label>
-            <select id="mode" name="mode" onchange="ubahModeTabungan()">
-                <option value="target" selected>Target & deadline</option>
-                <option value="umum">Tabungan umum</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="nama">Nama tabungan</label>
-            <input type="text" id="nama" name="nama" maxlength="100" placeholder="Contoh: Dana darurat" required>
-        </div>
-        <div class="savings-form-grid" id="targetFields">
-            <div class="form-group">
-                <label for="target_nominal">Target (Rp)</label>
-                <input type="number" id="target_nominal" name="target_nominal" min="1" step="1" placeholder="10000000" required>
-            </div>
-            <div class="form-group">
-                <label for="deadline">Deadline</label>
-                <input type="date" id="deadline" name="deadline">
-            </div>
-        </div>
-        <input type="hidden" name="warna" value="#1c1c1e">
-        <button type="submit" class="btn-submit"><i class="bi bi-plus-lg"></i> Buat Tabungan</button>
-    </form>
+<div style="margin-bottom: 24px;">
+    <a href="{{ url_for('tambah_tabungan') }}" class="btn-catat-utama" style="text-decoration: none;">
+        <i class="bi bi-plus-circle-fill" style="font-size: 1.1rem;"></i>
+        Tambah Tabungan
+    </a>
 </div>
 
 <div class="section-heading savings-list-heading">
@@ -67,7 +39,11 @@
     {% if progress > 100 %}{% set progress = 100 %}{% endif %}
     <a class="savings-card" href="{{ url_for('detail_tabungan', tabungan_id=item.id) }}">
         <div class="savings-card-top">
+            {% if item.product_image %}
+            <img class="savings-thumb" src="{{ item.product_image }}" alt="{{ item.product_title or item.nama }}" onerror="this.style.display='none'">
+            {% else %}
             <div class="savings-symbol" data-warna="{{ item.warna }}"><i class="bi {% if item.target_nominal %}bi-bullseye{% else %}bi-wallet2{% endif %}"></i></div>
+            {% endif %}
             <div class="savings-card-title">
                 <h3>{{ item.nama }}</h3>
                 <span class="status-pill {{ item.status }}">{{ item.status|capitalize }}</span>
@@ -87,31 +63,17 @@
     <div class="empty-state">
         <i class="bi bi-piggy-bank"></i>
         <h3>Belum ada target</h3>
-        <p>Buat target pertama untuk mulai menabung.</p>
+        <p>Buat tabungan pertama untuk mulai menabung.</p>
     </div>
     {% endfor %}
 </div>
 <script>
-    function ubahModeTabungan() {
-        const mode = document.getElementById('mode').value;
-        const fields = document.getElementById('targetFields');
-        const target = document.getElementById('target_nominal');
-        const deadline = document.getElementById('deadline');
-        const memakaiTarget = mode === 'target';
-        fields.style.display = memakaiTarget ? 'grid' : 'none';
-        target.required = memakaiTarget;
-        deadline.required = memakaiTarget;
-        if (!memakaiTarget) {
-            target.value = '';
-            deadline.value = '';
-        }
-    }
-
     document.querySelectorAll('[data-warna]').forEach((element) => {
         element.style.backgroundColor = element.dataset.warna;
     });
     document.querySelectorAll('[data-progress]').forEach((element) => {
         element.style.width = `${element.dataset.progress}%`;
+        element.style.backgroundColor = element.dataset.warna;
     });
 </script>
 {% endblock %}

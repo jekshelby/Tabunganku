@@ -1,6 +1,40 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from db import get_db_connection
+from features.tautan import ambil_preview_tautan, normalisasi_url
+
+_kolom_produk_siap = False
+_PRODUK_FIELDS = 't.product_url, t.product_title, t.product_image, t.product_site'
+
+
+def _ensure_kolom_produk(conn, cursor):
+    global _kolom_produk_siap
+    if _kolom_produk_siap:
+        return
+    cursor.execute(
+        """
+        ALTER TABLE tabungan
+            ADD COLUMN IF NOT EXISTS product_url TEXT,
+            ADD COLUMN IF NOT EXISTS product_title VARCHAR(300),
+            ADD COLUMN IF NOT EXISTS product_image TEXT,
+            ADD COLUMN IF NOT EXISTS product_site VARCHAR(100)
+        """
+    )
+    conn.commit()
+    _kolom_produk_siap = True
+
+
+def _preview_dari_url(product_url):
+    url = normalisasi_url(product_url)
+    if not url:
+        return '', '', '', ''
+    preview = ambil_preview_tautan(url) or {}
+    return (
+        preview.get('url') or url,
+        (preview.get('title') or '')[:300],
+        (preview.get('image') or '')[:2000],
+        (preview.get('site') or '')[:100],
+    )
 
 
 def _parse_nominal(value):
@@ -16,6 +50,7 @@ def get_semua_tabungan(user_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
+            _ensure_kolom_produk(conn, cursor)
             cursor.execute(
                 """
                 SELECT
@@ -26,6 +61,7 @@ def get_semua_tabungan(user_id):
                     t.status,
                     t.warna,
                     t.created_at,
+                    """ + _PRODUK_FIELDS + """,
                     COALESCE(SUM(
                         CASE
                             WHEN tt.tipe = 'setor' THEN tt.nominal
@@ -48,7 +84,7 @@ def get_semua_tabungan(user_id):
         conn.close()
 
 
-def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1c1e', mode='target'):
+def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1c1e', mode='target', product_url=''):
     nama = (nama or '').strip()
     target = _parse_nominal(target_nominal) if mode == 'target' else None
     if not nama or len(nama) > 100:
@@ -57,17 +93,35 @@ def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1
         return False, 'Target nominal wajib diisi dengan benar.'
     if mode == 'target' and not deadline:
         return False, 'Deadline wajib diisi untuk tabungan bertarget.'
+    if (product_url or '').strip() and not normalisasi_url(product_url):
+        return False, 'Tautan produk tidak valid. Gunakan tautan http atau https.'
+
+    product_url, product_title, product_image, product_site = _preview_dari_url(product_url)
 
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
+            _ensure_kolom_produk(conn, cursor)
             cursor.execute(
                 """
-                INSERT INTO tabungan (user_id, nama, target_nominal, deadline, warna)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO tabungan (
+                    user_id, nama, target_nominal, deadline, warna,
+                    product_url, product_title, product_image, product_site
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (user_id, nama, target, deadline or None, warna or '#1c1c1e'),
+                (
+                    user_id,
+                    nama,
+                    target,
+                    deadline or None,
+                    warna or '#1c1c1e',
+                    product_url or None,
+                    product_title or None,
+                    product_image or None,
+                    product_site or None,
+                ),
             )
             tabungan_id = cursor.fetchone()['id']
         conn.commit()
@@ -80,7 +134,7 @@ def buat_tabungan(user_id, nama, target_nominal=None, deadline=None, warna='#1c1
         conn.close()
 
 
-def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadline=None, mode='target'):
+def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadline=None, mode='target', product_url=''):
     nama = (nama or '').strip()
     target = _parse_nominal(target_nominal) if mode == 'target' else None
     if not nama or len(nama) > 100:
@@ -89,10 +143,15 @@ def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadli
         return False, 'Target nominal wajib diisi dengan benar.'
     if mode == 'target' and not deadline:
         return False, 'Deadline wajib diisi untuk tabungan bertarget.'
+    if (product_url or '').strip() and not normalisasi_url(product_url):
+        return False, 'Tautan produk tidak valid. Gunakan tautan http atau https.'
+
+    product_url, product_title, product_image, product_site = _preview_dari_url(product_url)
 
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
+            _ensure_kolom_produk(conn, cursor)
             cursor.execute(
                 """
                 SELECT COALESCE(SUM(
@@ -110,11 +169,28 @@ def edit_target_tabungan(user_id, tabungan_id, nama, target_nominal=None, deadli
                 SET nama = %s,
                     target_nominal = %s,
                     deadline = %s,
+                    product_url = %s,
+                    product_title = %s,
+                    product_image = %s,
+                    product_site = %s,
                     status = CASE WHEN %s IS NOT NULL AND %s >= %s THEN 'tercapai' ELSE 'aktif' END,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s AND user_id = %s
                 """,
-                (nama, target, deadline or None, target, saldo, target, tabungan_id, user_id),
+                (
+                    nama,
+                    target,
+                    deadline or None,
+                    product_url or None,
+                    product_title or None,
+                    product_image or None,
+                    product_site or None,
+                    target,
+                    saldo,
+                    target,
+                    tabungan_id,
+                    user_id,
+                ),
             )
             updated = cursor.rowcount == 1
         conn.commit()
@@ -195,6 +271,7 @@ def get_detail_tabungan(user_id, tabungan_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
+            _ensure_kolom_produk(conn, cursor)
             cursor.execute(
                 """
                 SELECT
@@ -205,6 +282,7 @@ def get_detail_tabungan(user_id, tabungan_id):
                     t.status,
                     t.warna,
                     t.created_at,
+                    """ + _PRODUK_FIELDS + """,
                     COALESCE(SUM(
                         CASE
                             WHEN tt.tipe = 'setor' THEN tt.nominal

@@ -3,48 +3,101 @@
 {% block content %}
 <div class="detail-topbar">
     <a href="{{ url_for('detail_tabungan', tabungan_id=tabungan.id) }}" class="back-link"><i class="bi bi-arrow-left"></i> Detail tabungan</a>
-    <span class="eyebrow">Edit target</span>
+    <span class="eyebrow">Edit tabungan</span>
 </div>
 
 <div class="form-card">
-    <div class="section-heading">
-        <div>
-            <h3>Ubah tabungan</h3>
-            <p>Saldo yang sudah terkumpul tetap aman.</p>
-        </div>
-        <i class="bi bi-sliders"></i>
+    <div class="tab-switcher">
+        <button type="button" id="tabTarget" onclick="switchMode('target')">Target & deadline</button>
+        <button type="button" id="tabUmum" onclick="switchMode('umum')">Tabungan umum</button>
     </div>
     <form method="POST">
-        <div class="form-group">
-            <label for="mode">Jenis tabungan</label>
-            <select id="mode" name="mode" onchange="ubahModeEdit()">
-                <option value="target" {% if tabungan.target_nominal %}selected{% endif %}>Target & deadline</option>
-                <option value="umum" {% if not tabungan.target_nominal %}selected{% endif %}>Tabungan umum</option>
-            </select>
-        </div>
+        <input type="hidden" id="inputMode" name="mode" value="{% if tabungan.target_nominal %}target{% else %}umum{% endif %}">
         <div class="form-group">
             <label for="nama">Nama tabungan</label>
             <input type="text" id="nama" name="nama" maxlength="100" value="{{ tabungan.nama }}" required>
         </div>
-        <div class="form-group" id="targetField">
-            <label for="target_nominal">Target nominal (Rp)</label>
-            <input type="number" id="target_nominal" name="target_nominal" min="1" step="1" value="{% if tabungan.target_nominal %}{{ "{:,.0f}".format(tabungan.target_nominal).replace(',', '') }}{% endif %}" {% if tabungan.target_nominal %}required{% endif %}>
+        <div class="savings-form-grid" id="targetFields">
+            <div class="form-group" id="targetField">
+                <label for="target_nominal">Target (Rp)</label>
+                <input type="number" id="target_nominal" name="target_nominal" min="1" step="1" value="{% if tabungan.target_nominal %}{{ "{:,.0f}".format(tabungan.target_nominal).replace(',', '') }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label for="deadline">Deadline</label>
+                <input type="date" id="deadline" name="deadline" value="{{ tabungan.deadline or '' }}">
+            </div>
         </div>
         <div class="form-group">
-            <label for="deadline">Deadline</label>
-            <input type="date" id="deadline" name="deadline" value="{{ tabungan.deadline or '' }}">
+            <label for="product_url">Tautan produk (opsional)</label>
+            <input type="url" id="product_url" name="product_url" maxlength="2000" value="{{ tabungan.product_url or '' }}" placeholder="Tempel tautan Tokopedia, Shopee, dll">
         </div>
-        <button type="submit" class="btn-submit"><i class="bi bi-check-lg"></i> Simpan Target</button>
+        <div id="linkPreview" class="product-preview" {% if not tabungan.product_url %}hidden{% endif %}>
+            <img id="previewImage" alt="Preview produk" {% if tabungan.product_image %}src="{{ tabungan.product_image }}"{% else %}hidden{% endif %}>
+            <div class="product-preview-copy">
+                <span id="previewSite">{{ tabungan.product_site or '' }}</span>
+                <strong id="previewTitle">{{ tabungan.product_title or tabungan.product_url or '' }}</strong>
+                <em id="previewStatus"></em>
+            </div>
+        </div>
+        <button type="submit" id="btnSubmit" class="btn-submit"><i class="bi bi-check-lg"></i> Simpan Tabungan</button>
     </form>
 </div>
 <script>
-    function ubahModeEdit() {
-        const memakaiTarget = document.getElementById('mode').value === 'target';
-        document.getElementById('targetField').style.display = memakaiTarget ? 'block' : 'none';
+    function switchMode(mode) {
+        document.getElementById('inputMode').value = mode;
+        const memakaiTarget = mode === 'target';
+        document.getElementById('tabTarget').classList.toggle('active', memakaiTarget);
+        document.getElementById('tabUmum').classList.toggle('active', !memakaiTarget);
+        document.getElementById('targetFields').style.display = memakaiTarget ? 'grid' : 'none';
         document.getElementById('target_nominal').required = memakaiTarget;
         document.getElementById('deadline').required = memakaiTarget;
         if (!memakaiTarget) document.getElementById('target_nominal').value = '';
     }
-    ubahModeEdit();
+
+    const productInput = document.getElementById('product_url');
+    const previewBox = document.getElementById('linkPreview');
+    const previewImage = document.getElementById('previewImage');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewSite = document.getElementById('previewSite');
+    const previewStatus = document.getElementById('previewStatus');
+    let previewTimer = null;
+
+    function tampilkanPreview(data, loading) {
+        previewBox.hidden = false;
+        previewTitle.textContent = data.title || 'Preview tautan';
+        previewSite.textContent = data.site || '';
+        previewStatus.textContent = loading ? 'Mengambil preview...' : '';
+        if (data.image) {
+            previewImage.hidden = false;
+            previewImage.src = data.image;
+        } else if (!loading) {
+            previewImage.hidden = true;
+        }
+    }
+
+    productInput.addEventListener('input', () => {
+        const url = productInput.value.trim();
+        clearTimeout(previewTimer);
+        if (!url) {
+            previewBox.hidden = true;
+            return;
+        }
+        tampilkanPreview({ title: 'Mengambil data produk', site: '' }, true);
+        previewTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/preview-tautan?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                if (!data.success) {
+                    tampilkanPreview({ title: 'Preview belum tersedia', site: 'Tautan tetap bisa disimpan' }, false);
+                    return;
+                }
+                tampilkanPreview(data, false);
+            } catch (error) {
+                tampilkanPreview({ title: 'Preview belum tersedia', site: 'Tautan tetap bisa disimpan' }, false);
+            }
+        }, 600);
+    });
+
+    switchMode(document.getElementById('inputMode').value);
 </script>
 {% endblock %}
