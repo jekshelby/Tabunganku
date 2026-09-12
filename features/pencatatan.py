@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from db import get_db_connection
+from features.dompet import hitung_saldo_dompet
 
 
 def _parse_nominal(value):
@@ -32,13 +33,16 @@ def get_kategori_transaksi():
         ]
     }
 
-def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan="", dompet_id=None):
+def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan="", dompet_id=None, dompet_tujuan_id=None):
     """Menyimpan data transaksi baru khusus milik user_id tertentu."""
+    tipe = (tipe or '').strip().capitalize()
+    if tipe == 'Alokasi dana':
+        return alokasikan_dana(user_id, nominal, dompet_id, dompet_tujuan_id, catatan)
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
-        tipe = (tipe or '').strip().capitalize()
         if tipe not in {'Pemasukan', 'Pengeluaran'}:
             return False
         if not kategori or not str(kategori).strip():
@@ -71,13 +75,70 @@ def simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan="", dompet_i
         conn.close()
 
 
+def _transaksi_terkunci(row):
+    if not row:
+        return True
+    if row.get('tabungan_id') is not None:
+        return True
+    if row.get('dompet_tujuan_id') is not None:
+        return True
+    return (row.get('tipe') or '').strip().lower() == 'alokasi dana'
+
+
+def alokasikan_dana(user_id, nominal, dompet_sumber_id, dompet_tujuan_id, catatan=''):
+    nominal = _parse_nominal(nominal)
+    if not nominal or not dompet_sumber_id or not dompet_tujuan_id or str(dompet_sumber_id) == str(dompet_tujuan_id):
+        return False
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id FROM dompet
+                WHERE id IN (%s, %s) AND user_id = %s
+                ORDER BY id
+                FOR UPDATE
+                """,
+                (dompet_sumber_id, dompet_tujuan_id, user_id),
+            )
+            locked = {int(row['id']) for row in cursor.fetchall()}
+            try:
+                sumber_id = int(dompet_sumber_id)
+                tujuan_id = int(dompet_tujuan_id)
+            except (TypeError, ValueError):
+                return False
+            if sumber_id not in locked or tujuan_id not in locked:
+                return False
+
+            saldo_sumber = hitung_saldo_dompet(cursor, user_id, sumber_id)
+            if saldo_sumber < nominal:
+                return False
+
+            cursor.execute(
+                """
+                INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan, dompet_id, dompet_tujuan_id)
+                VALUES (%s, 'Alokasi Dana', %s, 'Alokasi Dana', %s, %s, %s)
+                """,
+                (user_id, nominal, (catatan or '').strip() or 'Pemindahan dana antar dompet', sumber_id, tujuan_id),
+            )
+        conn.commit()
+        return True
+    except Exception as error:
+        conn.rollback()
+        print(f'Error alokasi dana: {error}')
+        return False
+    finally:
+        conn.close()
+
+
 def get_transaksi(user_id, transaksi_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, tanggal, tipe, nominal, kategori, catatan, tabungan_id, dompet_id
+                SELECT id, tanggal, tipe, nominal, kategori, catatan, tabungan_id, dompet_id, dompet_tujuan_id
                 FROM transaksi
                 WHERE id = %s AND user_id = %s
                 """,
@@ -99,11 +160,15 @@ def edit_transaksi(user_id, transaksi_id, tipe, nominal, kategori, catatan=''):
     try:
         with conn.cursor() as cursor:
             cursor.execute(
-                'SELECT tabungan_id FROM transaksi WHERE id = %s AND user_id = %s',
+                """
+                SELECT tabungan_id, dompet_tujuan_id, tipe
+                FROM transaksi
+                WHERE id = %s AND user_id = %s
+                """,
                 (transaksi_id, user_id),
             )
             existing = cursor.fetchone()
-            if not existing or existing['tabungan_id'] is not None:
+            if _transaksi_terkunci(existing):
                 return False
             cursor.execute(
                 """
@@ -129,11 +194,15 @@ def hapus_transaksi(user_id, transaksi_id):
     try:
         with conn.cursor() as cursor:
             cursor.execute(
-                'SELECT tabungan_id FROM transaksi WHERE id = %s AND user_id = %s',
+                """
+                SELECT tabungan_id, dompet_tujuan_id, tipe
+                FROM transaksi
+                WHERE id = %s AND user_id = %s
+                """,
                 (transaksi_id, user_id),
             )
             existing = cursor.fetchone()
-            if not existing or existing['tabungan_id'] is not None:
+            if _transaksi_terkunci(existing):
                 return False
             cursor.execute(
                 'DELETE FROM transaksi WHERE id = %s AND user_id = %s',

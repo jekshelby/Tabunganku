@@ -18,6 +18,7 @@
         <button type="button" class="btn-filter active" onclick="filterTransaksi('semua', this)">Semua</button>
         <button type="button" class="btn-filter" onclick="filterTransaksi('pemasukan', this)">Pemasukan</button>
         <button type="button" class="btn-filter" onclick="filterTransaksi('pengeluaran', this)">Pengeluaran</button>
+        <button type="button" class="btn-filter" onclick="filterTransaksi('alokasi-dana', this)">Alokasi Dana</button>
     </div>
 
     {% if riwayat %}
@@ -43,16 +44,18 @@
         <!-- List Card Transaksi -->
         <div style="display: flex; flex-direction: column; gap: 10px;">
             {% for item in data_group['items'] %}
-            <div class="card-transaksi-item {{ item.tipe }}">
+            <div class="card-transaksi-item {{ item.tipe|replace(' ', '-') }}">
                 <div class="card-left">
                     <!-- Badge Kategori -->
-                    <div class="badge-kategori {{ item.tipe }}">
-                        {% if item.tipe == 'pengeluaran' %}
+                    <div class="badge-kategori {{ item.tipe|replace(' ', '-') }}">
+                        {% if item.tipe == 'alokasi dana' %}
+                        <i class="bi bi-arrow-left-right" style="font-size: 0.75rem;"></i>
+                        {% elif item.tipe == 'pengeluaran' %}
                         <i class="bi bi-tag-fill" style="font-size: 0.75rem;"></i>
                         {% else %}
                         <i class="bi bi-wallet2" style="font-size: 0.75rem;"></i>
                         {% endif %}
-                        <span>{{ item.kategori }}</span>
+                        <span>{% if item.tipe == 'alokasi dana' %}Alokasi Dana{% else %}{{ item.kategori }}{% endif %}</span>
                     </div>
 
                     <!-- Catatan Opsional -->
@@ -63,17 +66,17 @@
                     <!-- Sub-Badge Wallet/Dompet -->
                     <div class="badge-dompet">
                         <i class="bi bi-wallet-fill" style="font-size: 0.7rem;"></i>
-                        <span>Saldo Utama</span>
+                        <span>{% if item.tipe == 'alokasi dana' %}{{ item.dompet_nama }} ke {{ item.dompet_tujuan_nama }}{% else %}{{ item.dompet_nama or 'Cash' }}{% endif %}</span>
                     </div>
                 </div>
 
                 <div class="card-right">
                     <!-- Nominal dengan Indikator Warna -->
-                    <div class="nominal-text {{ item.tipe }}">
-                        {% if item.tipe == 'pengeluaran' %}-{% else %}+{% endif %}Rp {{
+                    <div class="nominal-text {{ item.tipe|replace(' ', '-') }}">
+                        {% if item.tipe == 'pengeluaran' %}-{% elif item.tipe == 'pemasukan' %}+{% endif %}Rp {{
                         "{:,.0f}".format(item.nominal).replace(',', '.') }}
                     </div>
-                    {% if not item.tabungan_id %}
+                    {% if not item.tabungan_id and item.tipe != 'alokasi dana' %}
                     <div class="item-actions">
                         <a href="{{ url_for('edit_transaksi_route', transaksi_id=item.id) }}" class="icon-action" title="Edit transaksi" aria-label="Edit transaksi">
                             <i class="bi bi-pencil"></i>

@@ -70,13 +70,15 @@
         <div class="card-transaksi-item">
             <div class="card-left">
                 <!-- Badge Kategori -->
-                <div class="badge-kategori {{ item.tipe }}">
-                    {% if item.tipe == 'pengeluaran' %}
+                <div class="badge-kategori {{ item.tipe|replace(' ', '-') }}">
+                    {% if item.tipe == 'alokasi dana' %}
+                    <i class="bi bi-arrow-left-right" style="font-size: 0.75rem;"></i>
+                    {% elif item.tipe == 'pengeluaran' %}
                     <i class="bi bi-tag-fill" style="font-size: 0.75rem;"></i>
                     {% else %}
                     <i class="bi bi-wallet2" style="font-size: 0.75rem;"></i>
                     {% endif %}
-                    <span>{{ item.kategori }}</span>
+                    <span>{{ 'Alokasi Dana' if item.tipe == 'alokasi dana' else item.kategori }}</span>
                 </div>
 
                 <!-- Catatan / Keterangan -->
@@ -85,14 +87,14 @@
                 <!-- Sub-Badge Tanggal -->
                 <div class="badge-dompet">
                     <i class="bi bi-calendar3" style="font-size: 0.7rem;"></i>
-                    <span>{{ item.tanggal }}</span>
+                    <span>{% if item.tipe == 'alokasi dana' %}{{ item.dompet_nama }} ke {{ item.dompet_tujuan_nama }}{% else %}{{ item.tanggal }}{% endif %}</span>
                 </div>
             </div>
 
             <div class="card-right">
                 <!-- Nominal -->
-                <div class="nominal-text {{ item.tipe }}">
-                    {% if item.tipe == 'pengeluaran' %}-{% else %}+{% endif %}Rp {{
+                <div class="nominal-text {{ item.tipe|replace(' ', '-') }}">
+                    {% if item.tipe == 'pengeluaran' %}-{% elif item.tipe == 'pemasukan' %}+{% endif %}Rp {{
                     "{:,.0f}".format(item.nominal).replace(',', '.') }}
                 </div>
             </div>

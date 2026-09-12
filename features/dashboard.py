@@ -1,4 +1,5 @@
 from db import get_db_connection
+from features.dompet import get_semua_dompet
 
 def get_ringkasan_keuangan(user_id):
     """Mengambil total saldo, pemasukan, pengeluaran, dan 5 transaksi terakhir milik user_id."""
@@ -6,30 +7,21 @@ def get_ringkasan_keuangan(user_id):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("""
-            SELECT d.id, d.nama, d.jenis, d.warna, d.is_utama,
-                COALESCE(SUM(CASE WHEN LOWER(t.tipe) = 'pemasukan' THEN t.nominal ELSE -t.nominal END), 0) AS saldo
-            FROM dompet d
-            LEFT JOIN transaksi t ON t.dompet_id = d.id
-            WHERE d.user_id = %s
-            GROUP BY d.id
-            ORDER BY d.is_utama DESC, d.created_at ASC
-        """, (user_id,))
-        dompet = cursor.fetchall()
+        dompet = get_semua_dompet(user_id)
 
         # Total Pemasukan
         cursor.execute("""
             SELECT COALESCE(SUM(nominal), 0) as total 
-            FROM transaksi 
-            WHERE user_id = %s AND LOWER(tipe) = 'pemasukan'
+            FROM transaksi t
+            WHERE t.user_id = %s AND LOWER(t.tipe) = 'pemasukan'
         """, (user_id,))
         total_pemasukan = float(cursor.fetchone()['total'])
 
         # Total Pengeluaran
         cursor.execute("""
             SELECT COALESCE(SUM(nominal), 0) as total 
-            FROM transaksi 
-            WHERE user_id = %s AND LOWER(tipe) = 'pengeluaran'
+            FROM transaksi t
+            WHERE t.user_id = %s AND LOWER(t.tipe) = 'pengeluaran'
         """, (user_id,))
         total_pengeluaran = float(cursor.fetchone()['total'])
 
@@ -38,10 +30,12 @@ def get_ringkasan_keuangan(user_id):
 
         # 5 Transaksi Terakhir
         cursor.execute("""
-            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, tabungan_id, created_at
-            FROM transaksi 
-            WHERE user_id = %s 
-            ORDER BY tanggal DESC, created_at DESC 
+            SELECT t.id, t.tanggal, LOWER(t.tipe) AS tipe, t.nominal, t.kategori, t.catatan, t.tabungan_id, t.dompet_id, t.dompet_tujuan_id, d.nama AS dompet_nama, tujuan.nama AS dompet_tujuan_nama, t.created_at
+            FROM transaksi t
+            LEFT JOIN dompet d ON d.id = t.dompet_id
+            LEFT JOIN dompet tujuan ON tujuan.id = t.dompet_tujuan_id
+            WHERE t.user_id = %s
+            ORDER BY t.tanggal DESC, t.created_at DESC
             LIMIT 5
         """, (user_id,))
         transaksi_terakhir = cursor.fetchall()
@@ -76,10 +70,12 @@ def get_semua_riwayat(user_id):
 
     try:
         cursor.execute("""
-            SELECT id, tanggal, LOWER(tipe) AS tipe, nominal, kategori, catatan, tabungan_id, created_at
-            FROM transaksi 
-            WHERE user_id = %s 
-            ORDER BY tanggal DESC, created_at DESC
+            SELECT t.id, t.tanggal, LOWER(t.tipe) AS tipe, t.nominal, t.kategori, t.catatan, t.tabungan_id, t.dompet_id, t.dompet_tujuan_id, d.nama AS dompet_nama, tujuan.nama AS dompet_tujuan_nama, t.created_at
+            FROM transaksi t
+            LEFT JOIN dompet d ON d.id = t.dompet_id
+            LEFT JOIN dompet tujuan ON tujuan.id = t.dompet_tujuan_id
+            WHERE t.user_id = %s
+            ORDER BY t.tanggal DESC, t.created_at DESC
         """, (user_id,))
         transaksi = cursor.fetchall()
         riwayat = {}
@@ -94,7 +90,7 @@ def get_semua_riwayat(user_id):
             group['items'].append(item)
             if item['tipe'] == 'pemasukan':
                 group['total_pemasukan'] += item['nominal']
-            else:
+            elif item['tipe'] == 'pengeluaran':
                 group['total_pengeluaran'] += item['nominal']
 
         return riwayat

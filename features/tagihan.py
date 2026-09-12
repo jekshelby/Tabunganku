@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from db import get_db_connection
+from features.dompet import hitung_saldo_dompet
 
 
 def _parse_nominal(value):
@@ -58,6 +59,11 @@ def buat_tagihan(user_id, nama, nominal, jatuh_tempo=None, kategori='Lainnya', c
 
 
 def bayar_tagihan(user_id, tagihan_id, dompet_id):
+    try:
+        selected_dompet_id = int(dompet_id)
+    except (TypeError, ValueError):
+        return False, 'Dompet tidak ditemukan.'
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
@@ -70,19 +76,25 @@ def bayar_tagihan(user_id, tagihan_id, dompet_id):
                 return False, 'Tagihan tidak ditemukan.'
             if tagihan['status'] == 'lunas':
                 return False, 'Tagihan ini sudah lunas.'
-            cursor.execute('SELECT id FROM dompet WHERE id = %s AND user_id = %s', (dompet_id, user_id))
-            if not cursor.fetchone():
+            cursor.execute(
+                'SELECT id FROM dompet WHERE id = %s AND user_id = %s FOR UPDATE',
+                (selected_dompet_id, user_id),
+            )
+            dompet = cursor.fetchone()
+            if not dompet:
                 return False, 'Dompet tidak ditemukan.'
+            if hitung_saldo_dompet(cursor, user_id, dompet['id']) < tagihan['nominal']:
+                return False, 'Saldo dompet tidak mencukupi untuk membayar tagihan.'
             cursor.execute(
                 """
                 INSERT INTO transaksi (user_id, tipe, nominal, kategori, catatan, dompet_id)
                 VALUES (%s, 'Pengeluaran', %s, %s, %s, %s)
                 """,
-                (user_id, tagihan['nominal'], f"Tagihan - {tagihan['nama']}"[:50], 'Pembayaran tagihan', dompet_id),
+                (user_id, tagihan['nominal'], f"Tagihan - {tagihan['nama']}"[:50], 'Pembayaran tagihan', selected_dompet_id),
             )
             cursor.execute(
                 "UPDATE tagihan SET status = 'lunas', paid_at = CURRENT_TIMESTAMP, dompet_id = %s WHERE id = %s AND user_id = %s",
-                (dompet_id, tagihan_id, user_id),
+                (selected_dompet_id, tagihan_id, user_id),
             )
         conn.commit()
         return True, 'Tagihan berhasil dibayar dan dicatat sebagai pengeluaran.'

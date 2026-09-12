@@ -19,7 +19,7 @@ from features.auth import (
     update_user_profile,
 )
 from features.report import get_laporan_keuangan
-from features.dompet import buat_dompet, get_dompet_options, get_semua_dompet, hapus_dompet
+from features.dompet import buat_dompet, get_dompet_options, hapus_dompet
 from features.tagihan import bayar_tagihan, buat_tagihan, get_semua_tagihan, hapus_tagihan
 from features.tabungan import (
     buat_tabungan,
@@ -113,7 +113,6 @@ def index():
 
     # Simpan maksimal 3 transaksi terbaru untuk index.html
     data_dashboard['riwayat'] = items_flat[:3]
-    data_dashboard['dompet'] = get_semua_dompet(user_id)
 
     return render_template('dashboard.html', data=data_dashboard)
 
@@ -127,8 +126,9 @@ def tambah_transaksi():
         kategori = request.form.get('kategori')
         catatan = request.form.get('catatan')
         dompet_id = request.form.get('dompet_id') or None
+        dompet_tujuan_id = request.form.get('dompet_tujuan_id') or None
 
-        if simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan, dompet_id):
+        if simpan_transaksi_baru(user_id, tipe, nominal, kategori, catatan, dompet_id, dompet_tujuan_id):
             flash('Transaksi berhasil disimpan.', 'success')
             return redirect(url_for('index'))
 
@@ -231,6 +231,9 @@ def edit_transaksi_route(transaksi_id):
         return redirect(url_for('transaksi'))
     if transaksi_data['tabungan_id'] is not None:
         flash('Transaksi tabungan dikelola dari menu Tabungan.', 'danger')
+        return redirect(url_for('transaksi'))
+    if transaksi_data.get('dompet_tujuan_id') is not None or (transaksi_data.get('tipe') or '').strip().lower() == 'alokasi dana':
+        flash('Alokasi dana tidak dapat diedit. Buat alokasi baru jika perlu menyesuaikan.', 'danger')
         return redirect(url_for('transaksi'))
 
     if request.method == 'POST':

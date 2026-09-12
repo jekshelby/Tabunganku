@@ -23,6 +23,10 @@
             style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
             Pemasukan
         </button>
+        <button type="button" id="tabAlokasi" onclick="switchTipe('alokasi dana')"
+            style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            Alokasi Dana
+        </button>
     </div>
 
     <div id="scanEntry" class="scan-entry">
@@ -44,14 +48,21 @@
             <input type="number" id="inputNominal" name="nominal" placeholder="Contoh: 50000" min="1" step="1" required>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="dompetSumberGroup">
             <label for="dompet_id">Dompet</label>
             <select id="dompet_id" name="dompet_id" required>
                 {% for wallet in dompet %}<option value="{{ wallet.id }}">{{ wallet.nama }}</option>{% endfor %}
             </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="dompetTujuanGroup" style="display: none;">
+            <label for="dompet_tujuan_id">Pindahkan ke</label>
+            <select id="dompet_tujuan_id" name="dompet_tujuan_id">
+                {% for wallet in dompet %}<option value="{{ wallet.id }}">{{ wallet.nama }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" id="kategoriGroup">
             <label>Kategori</label>
             <select id="selectKategori" name="kategori" required>
                 <!-- Diisi via JavaScript -->
@@ -80,8 +91,13 @@
 
         const tabPengeluaran = document.getElementById('tabPengeluaran');
         const tabPemasukan = document.getElementById('tabPemasukan');
+        const tabAlokasi = document.getElementById('tabAlokasi');
         const btnSubmit = document.getElementById('btnSubmit');
         const scanEntry = document.getElementById('scanEntry');
+        const dompetSumberGroup = document.getElementById('dompetSumberGroup');
+        const dompetTujuanGroup = document.getElementById('dompetTujuanGroup');
+        const dompetTujuan = document.getElementById('dompet_tujuan_id');
+        const kategoriGroup = document.getElementById('kategoriGroup');
 
         if (tipe === 'pengeluaran') {
             tabPengeluaran.style.backgroundColor = '#000000';
@@ -89,10 +105,29 @@
 
             tabPemasukan.style.backgroundColor = 'transparent';
             tabPemasukan.style.color = '#6e6e73';
+            tabAlokasi.style.backgroundColor = 'transparent';
+            tabAlokasi.style.color = '#6e6e73';
 
             btnSubmit.innerText = 'Simpan Pengeluaran';
             btnSubmit.style.backgroundColor = '#000000';
             scanEntry.style.display = 'flex';
+            dompetTujuanGroup.style.display = 'none';
+            dompetTujuan.required = false;
+            dompetSumberGroup.querySelector('label').innerText = 'Dompet';
+        } else if (tipe === 'alokasi dana') {
+            tabAlokasi.style.backgroundColor = '#2563eb';
+            tabAlokasi.style.color = '#ffffff';
+            tabPengeluaran.style.backgroundColor = 'transparent';
+            tabPengeluaran.style.color = '#6e6e73';
+            tabPemasukan.style.backgroundColor = 'transparent';
+            tabPemasukan.style.color = '#6e6e73';
+            btnSubmit.innerText = 'Alokasikan Dana';
+            btnSubmit.style.backgroundColor = '#2563eb';
+            scanEntry.style.display = 'none';
+            dompetTujuanGroup.style.display = 'block';
+            dompetTujuan.required = true;
+            dompetSumberGroup.querySelector('label').innerText = 'Dari dompet';
+            kategoriGroup.style.display = 'none';
         } else {
             tabPemasukan.style.backgroundColor = '#2e7d32';
             tabPemasukan.style.color = '#ffffff';
@@ -103,6 +138,10 @@
             btnSubmit.innerText = 'Simpan Pemasukan';
             btnSubmit.style.backgroundColor = '#2e7d32';
             scanEntry.style.display = 'none';
+            dompetTujuanGroup.style.display = 'none';
+            dompetTujuan.required = false;
+            dompetSumberGroup.querySelector('label').innerText = 'Dompet';
+            kategoriGroup.style.display = 'block';
         }
 
         // Render opsi kategori berdasarkan tipe
@@ -111,6 +150,13 @@
 
         // Mengambil opsi berdasarkan kunci huruf kecil
         const opsiTersedia = dataKategori[tipe] || [];
+
+        if (tipe === 'alokasi dana') {
+            const option = document.createElement('option');
+            option.value = 'Alokasi Dana';
+            option.textContent = 'Alokasi Dana';
+            selectKategori.appendChild(option);
+        }
 
         opsiTersedia.forEach(kat => {
             const option = document.createElement('option');

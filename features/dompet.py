@@ -11,16 +11,48 @@ def _parse_nominal(value):
     return nominal if nominal > 0 else None
 
 
+SALDO_DOMPET_SQL = """
+COALESCE(SUM(CASE
+    WHEN LOWER(t.tipe) = 'pemasukan' THEN t.nominal
+    WHEN LOWER(t.tipe) = 'pengeluaran' THEN -t.nominal
+    WHEN LOWER(t.tipe) = 'alokasi dana' AND t.dompet_id = d.id THEN -t.nominal
+    WHEN LOWER(t.tipe) = 'alokasi dana' AND t.dompet_tujuan_id = d.id THEN t.nominal
+    ELSE 0
+END), 0)
+"""
+
+
+def hitung_saldo_dompet(cursor, user_id, dompet_id):
+    cursor.execute(
+        """
+        SELECT COALESCE(SUM(CASE
+            WHEN LOWER(tipe) = 'pemasukan' THEN nominal
+            WHEN LOWER(tipe) = 'pengeluaran' THEN -nominal
+            WHEN LOWER(tipe) = 'alokasi dana' AND dompet_id = %s THEN -nominal
+            WHEN LOWER(tipe) = 'alokasi dana' AND dompet_tujuan_id = %s THEN nominal
+            ELSE 0
+        END), 0) AS saldo
+        FROM transaksi
+        WHERE user_id = %s AND (dompet_id = %s OR dompet_tujuan_id = %s)
+        """,
+        (dompet_id, dompet_id, user_id, dompet_id, dompet_id),
+    )
+    row = cursor.fetchone()
+    return row['saldo'] if row else Decimal('0')
+
+
 def get_semua_dompet(user_id):
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
             cursor.execute(
-                """
-                SELECT d.id, d.nama, d.jenis, d.warna, d.created_at,
-                    COALESCE(SUM(CASE WHEN LOWER(t.tipe) = 'pemasukan' THEN t.nominal ELSE -t.nominal END), 0) AS saldo
+                f"""
+                SELECT d.id, d.nama, d.jenis, d.warna, d.is_utama, d.created_at,
+                    {SALDO_DOMPET_SQL} AS saldo
                 FROM dompet d
-                LEFT JOIN transaksi t ON t.dompet_id = d.id
+                LEFT JOIN transaksi t
+                    ON t.user_id = d.user_id
+                   AND (t.dompet_id = d.id OR t.dompet_tujuan_id = d.id)
                 WHERE d.user_id = %s
                 GROUP BY d.id
                 ORDER BY d.is_utama DESC, d.created_at ASC
@@ -66,7 +98,14 @@ def hapus_dompet(user_id, dompet_id):
                 return False, 'Dompet tidak ditemukan.'
             if dompet['is_utama']:
                 return False, 'Dompet Utama tidak dapat dihapus.'
-            cursor.execute('SELECT COUNT(*) AS jumlah FROM transaksi WHERE dompet_id = %s AND user_id = %s', (dompet_id, user_id))
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS jumlah
+                FROM transaksi
+                WHERE user_id = %s AND (dompet_id = %s OR dompet_tujuan_id = %s)
+                """,
+                (user_id, dompet_id, dompet_id),
+            )
             if cursor.fetchone()['jumlah']:
                 return False, 'Dompet yang sudah memiliki transaksi tidak dapat dihapus.'
             cursor.execute('DELETE FROM dompet WHERE id = %s AND user_id = %s', (dompet_id, user_id))

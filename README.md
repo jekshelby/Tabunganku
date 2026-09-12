@@ -65,6 +65,7 @@ Semua data dashboard diambil berdasarkan `user_id` dari session sehingga data an
 Pengguna dapat menambahkan transaksi dengan informasi:
 
 - Jenis transaksi: pemasukan atau pengeluaran.
+- Alokasi Dana untuk memindahkan saldo antar dompet.
 - Nominal.
 - Kategori.
 - Catatan.
@@ -80,6 +81,8 @@ Transaksi juga dapat:
 - Dilihat berdasarkan kelompok tanggal.
 
 Transaksi yang dibuat otomatis oleh sistem tabungan tidak dapat diedit atau dihapus langsung dari menu transaksi. Perubahannya harus dilakukan melalui menu Tabungan agar saldo tetap konsisten.
+
+Alokasi dana membutuhkan dompet sumber dan dompet tujuan. Saldo dompet sumber berkurang, saldo dompet tujuan bertambah, dan total saldo seluruh dompet tetap sama. Alokasi disimpan sebagai satu record transaksi dan tidak dapat diedit atau dihapus manual.
 
 Transaksi manual dapat dikaitkan dengan dompet tertentu, seperti Dompet Utama, rekening bank, atau e-wallet.
 
